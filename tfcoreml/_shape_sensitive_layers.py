@@ -187,10 +187,10 @@ def _add_concat(op, context):
 
 # Only the case when the splits are equal and along the channel axis is handled
 def _add_split(op, context):
-  input = op.inputs[1]
-  input_name = compat.as_str_any(input.name)
+  input_tensor = op.inputs[1]
+  input_name = compat.as_str_any(input_tensor.name)
   input_shape = context.shape_dict[input_name]
-  make_tensor(input, context)
+  make_tensor(input_tensor, context)
 
   common_out_shape = []
   output_names = []
