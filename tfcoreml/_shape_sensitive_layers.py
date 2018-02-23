@@ -185,7 +185,7 @@ def _add_concat(op, context):
   context.translated[output_name] = True
 
 
-#Only the case when the splits are equal and along the channel axis are handled
+# Only the case when the splits are equal and along the channel axis is handled
 def _add_split(op, context):
   input = op.inputs[1]
   input_name = compat.as_str_any(input.name)
@@ -211,7 +211,6 @@ def _add_split(op, context):
 
   context.builder.add_split(output_names[0], input_name, output_names)
   for out_name in output_names: context.translated[out_name] = True
-
 
 
 def _add_reshape(op, context):
