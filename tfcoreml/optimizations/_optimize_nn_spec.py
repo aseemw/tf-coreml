@@ -36,6 +36,12 @@ def _optimize_disconnected_components(builder):
 
   _optimize._remove_disconnected_components(builder)
 
+def _optimize_pad_conv(builder):
+  """
+  Fuses pad-conv layers when the pad layer is doing 'constant' padding with zeros
+  """
+  _optimize._fuse_pad_conv(builder)
+
 def optimize_nn_spec(builder):
   """
   Call a specific set of network optimizations
@@ -43,6 +49,7 @@ def optimize_nn_spec(builder):
 
   _optimize_fold_load_constants(builder.nn_spec.layers)
   _optimize_spatial_reduce_operation(builder.nn_spec.layers)
+  _optimize_pad_conv(builder.nn_spec.layers)
   _optimize_conv_mul_add(builder.nn_spec.layers)
   _optimize_disconnected_components(builder)
 
