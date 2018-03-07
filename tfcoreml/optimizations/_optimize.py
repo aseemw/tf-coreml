@@ -19,6 +19,15 @@ def _graph_info(nn_layers):
       blob_src[out] = i
   return blob_dst, blob_src
 
+def _get_padding_values(paddings):
+  ph = [0, 0]
+  pw = [0, 0]
+  if len(paddings) == 2:
+    ph = [paddings[0].startEdgeSize,
+          paddings[0].endEdgeSize]
+    pw = [paddings[1].startEdgeSize,
+          paddings[1].endEdgeSize]
+  return ph, pw
 
 def _evaluate_slice(layer, x, shape):
   params = layer.slice
@@ -341,16 +350,6 @@ def _fuse_conv_mul_add(nn_layers):
 def _fuse_pad_conv(nn_layers):
   blob_dst, blob_src = _graph_info(nn_layers)
 
-  def get_padding_values(paddings):
-    ph = [0, 0]
-    pw = [0, 0]
-    if len(paddings) == 2:
-      ph = [paddings[0].startEdgeSize,
-            paddings[0].endEdgeSize]
-      pw = [paddings[1].startEdgeSize,
-            paddings[1].endEdgeSize]
-    return ph, pw
-
   def is_followed_by_convolution(out):
     status = False
     layer_info = dict()
@@ -360,7 +359,7 @@ def _fuse_pad_conv(nn_layers):
       if next_layer.WhichOneof('layer') == 'convolution' and \
          layer.convolution.isDeconvolution == False and \
          next_layer.convolution.HasField("valid"):
-        ph, pw = get_padding_values(
+        ph, pw = _get_padding_values(
           next_layer.convolution.valid.paddingAmounts.borderAmounts)
         status = True
         layer_info['pad_H'] = ph
@@ -373,7 +372,7 @@ def _fuse_pad_conv(nn_layers):
     layer_info = dict()
     if layer.padding.HasField("constant") and \
       np.abs(layer.padding.constant.value) < 1e-6:
-      ph, pw = get_padding_values(
+      ph, pw = _get_padding_values(
         layer.padding.paddingAmounts.borderAmounts)
       status = True
       layer_info['pad_H'] = ph
@@ -407,6 +406,74 @@ def _fuse_pad_conv(nn_layers):
 
   for index in sorted(layers_to_be_removed, reverse=True):
     del nn_layers[index]
+
+
+def _fuse_conv_crop(nn_layers):
+  blob_dst, blob_src = _graph_info(nn_layers)
+
+  def is_followed_by_crop(out):
+    status = False
+    layer_info = dict()
+    if out in blob_dst and len(blob_dst[out]) == 1:
+      next_layer_id = blob_dst[out][0]
+      next_layer = nn_layers[next_layer_id]
+      if next_layer.WhichOneof('layer') == 'crop' and \
+        len(next_layer.input) == 1:
+        ch, cw = _get_padding_values(
+          next_layer.crop.cropAmounts.borderAmounts)
+        status = True
+        layer_info['crop_H'] = ch
+        layer_info['crop_W'] = cw
+        layer_info['id'] = next_layer_id
+        layer_info['crop_out'] = next_layer.output[0]
+    return status, layer_info
+
+  layers_to_be_removed = []
+  # Go through the layers and check for "pad-conv" patterns
+  for i, layer in enumerate(nn_layers):
+    layer_type = layer.WhichOneof('layer')
+    if layer_type == 'convolution' and \
+      layer.convolution.isDeconvolution == False and \
+      layer.convolution.HasField("valid"):
+      conv_out = layer.output[0]
+      status, crop_info = is_followed_by_crop(conv_out)
+      if status:
+        ch = crop_info['crop_H']
+        cw = crop_info['crop_W']
+        ph, pw = _get_padding_values(
+                layer.convolution.valid.paddingAmounts.borderAmounts)
+        #check that the padding and cropping are symmetric, otherwise abort fusing
+        if ch[0] != ch[1]: continue
+        if ph[0] != ph[1]: continue
+        if cw[0] != cw[1]: continue
+        if pw[0] != pw[1]: continue
+        sh = 1
+        sw = 1
+        if len(layer.convolution.stride) == 2:
+          sh = layer.convolution.stride[0]
+          sw = layer.convolution.stride[1]
+        #check whether there is enough padding to eliminate crop layer,
+        #otherwise abort fusing
+        if 1 + ch[0]*sh > ph[0] or \
+          1 + cw[0]*sw > pw[0]:
+          continue
+        new_pad_h = 1 if 1+ch[0]*sh==ph[0] else ph[0]-ch[0]*sh
+        new_pad_w = 1 if 1+cw[0]*sw==pw[0] else pw[0]-cw[0]*sw
+        layer.ClearField("output")
+        layer.output.append(crop_info['crop_out'])
+        params = layer.convolution.valid.paddingAmounts
+        params.ClearField("borderAmounts")
+        h_params = params.borderAmounts.add()
+        h_params.startEdgeSize = new_pad_h
+        h_params.endEdgeSize = new_pad_h
+        w_params = params.borderAmounts.add()
+        w_params.startEdgeSize = new_pad_w
+        w_params.endEdgeSize = new_pad_w
+        layers_to_be_removed.append(crop_info['id'])
+
+  for index in sorted(layers_to_be_removed, reverse=True):
+    del nn_layers[index]
+
 
 def _remove_disconnected_components(builder):
   nn_layers = builder.nn_spec.layers
