@@ -398,7 +398,7 @@ def _fuse_pad_conv(nn_layers):
           params = conv_layer.convolution.valid.paddingAmounts
           params.ClearField("borderAmounts")
           h_params = params.borderAmounts.add()
-          h_params.startEdgeSize = conv_info['pad_H'][0]+pad_info['pad_H'][0]
+          h_params.startEdgeSize = conv_info['pad_H'][0] + pad_info['pad_H'][0]
           h_params.endEdgeSize = conv_info['pad_H'][1] + pad_info['pad_H'][1]
           w_params = params.borderAmounts.add()
           w_params.startEdgeSize = conv_info['pad_W'][0] + pad_info['pad_W'][0]

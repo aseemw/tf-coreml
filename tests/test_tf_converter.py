@@ -352,17 +352,13 @@ class TFSimpleNetworkTest(TFNetworkTest):
 
   def test_pad_conv_fuse(self):
     graph = tf.Graph()
-    k = 9
-    s = 1
-    ph = 5
-    pw = 1
     with graph.as_default() as g:
       x = tf.placeholder(tf.float32, shape=[None,32,18,3],
                          name="test_pad_conv/input")
-      W = tf.Variable(tf.truncated_normal([k,k,3,5], stddev=1))
-      paddings = tf.constant([[0, 0], [ph,ph], [pw,pw], [0, 0]])
+      W = tf.Variable(tf.truncated_normal([9,9,3,5], stddev=1))
+      paddings = tf.constant([[0, 0], [5,5], [1,1], [0, 0]])
       x_pad = tf.pad(x, paddings, "CONSTANT")
-      output = tf.nn.conv2d(x_pad,W,strides=[1,s,s,1], padding='VALID')
+      output = tf.nn.conv2d(x_pad,W,strides=[1,1,1,1], padding='VALID')
 
     output_name = [output.op.name]
     self._test_tf_model(graph,
