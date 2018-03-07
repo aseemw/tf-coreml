@@ -28,37 +28,46 @@ def _optimize_spatial_reduce_operation(nn_layers):
   _optimize._spatial_reduce_as_global_pool(nn_layers)
 
 
-def _optimize_disconnected_components(builder):
+def _optimize_disconnected_components(spec, nn_spec):
   """
   Removes from the CoreML NN graph all the layers that are not connected
   to the output nodes.
   """
 
-  _optimize._remove_disconnected_components(builder)
+  _optimize._remove_disconnected_components(spec, nn_spec)
 
-def _optimize_pad_conv(builder):
+def _optimize_pad_conv(nn_layers):
   """
   Fuses pad-conv layers when the pad layer is doing 'constant' padding with zeros
   """
-  _optimize._fuse_pad_conv(builder)
+  _optimize._fuse_pad_conv(nn_layers)
 
 
-def _optimize_conv_crop(builder):
+def _optimize_conv_crop(nn_layers):
   """
   Fuses conv-crop layers if conv contains valid padding that is more than the crop
   """
-  _optimize._fuse_conv_crop(builder)
+  _optimize._fuse_conv_crop(nn_layers)
 
-def optimize_nn_spec(builder):
+def optimize_nn_spec(spec):
   """
   Call a specific set of network optimizations
   """
 
-  _optimize_fold_load_constants(builder.nn_spec.layers)
-  _optimize_spatial_reduce_operation(builder.nn_spec.layers)
-  _optimize_pad_conv(builder.nn_spec.layers)
-  _optimize_conv_crop(builder.nn_spec.layers)
-  _optimize_conv_mul_add(builder.nn_spec.layers)
-  _optimize_disconnected_components(builder)
+  if spec.WhichOneof('Type') == 'neuralNetwork':
+    nn_spec = spec.neuralNetwork
+  elif spec.WhichOneof('Type') == 'neuralNetworkClassifier':
+    nn_spec = spec.neuralNetworkClassifier
+  elif spec.WhichOneof('Type') == 'neuralNetworkRegressor':
+    nn_spec = spec.neuralNetworkRegressor
+  else:
+    raise ValueError('Specification must contain a neural network')
+
+  _optimize_fold_load_constants(nn_spec.layers)
+  _optimize_spatial_reduce_operation(nn_spec.layers)
+  _optimize_pad_conv(nn_spec.layers)
+  _optimize_conv_crop(nn_spec.layers)
+  _optimize_conv_mul_add(nn_spec.layers)
+  _optimize_disconnected_components(spec, nn_spec)
 
 

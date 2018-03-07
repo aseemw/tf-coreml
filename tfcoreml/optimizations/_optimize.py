@@ -475,8 +475,8 @@ def _fuse_conv_crop(nn_layers):
     del nn_layers[index]
 
 
-def _remove_disconnected_components(builder):
-  nn_layers = builder.nn_spec.layers
+def _remove_disconnected_components(spec, nn_spec):
+  nn_layers = nn_spec.layers
   #blob name to the index of the layer it is coming from
   blob_src = dict()
   for i, layer in enumerate(nn_layers):
@@ -491,7 +491,7 @@ def _remove_disconnected_components(builder):
   #get ids of layers that produce the network output nodes:
   #these will be the start nodes for our graph traversal
   start_ids = []
-  for out in builder.spec.description.output:
+  for out in spec.description.output:
     start_ids.append(blob_src[out.name])
 
   #Lets do BFS Graph traversal
