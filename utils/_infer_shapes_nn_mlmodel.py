@@ -442,7 +442,7 @@ def _infer_shapes(model_path, input_shape_dict = None):
 
     print('Input shape(s) :')
     for key, value in shape_dict.items():
-        print key, '--->',  value
+        print(key, '--->',  value)
     time.sleep(3)
 
     for i, layer in enumerate(layers):
@@ -456,7 +456,7 @@ def _infer_shapes(model_path, input_shape_dict = None):
 
         print('Output shape(s):')
         for out in layer.output:
-            print out, '---->', shape_dict[out]
+            print(out, '---->', shape_dict[out])
 
     return shape_dict
 
@@ -464,9 +464,9 @@ def _infer_shapes(model_path, input_shape_dict = None):
 if __name__ == '__main__':
 
     if not (len(sys.argv) == 2 or len(sys.argv) == 3):
-        print "Usage: infer_shapes_nn_model.py network.mlmodel"
-        print "or"
-        print "Usage: infer_shapes_nn_model.py network.mlmodel input_shape_dict"
+        print("Usage: infer_shapes_nn_model.py network.mlmodel")
+        print("or")
+        print("Usage: infer_shapes_nn_model.py network.mlmodel input_shape_dict")
 
     if len(sys.argv) == 2:
         shape_dict = _infer_shapes(sys.argv[1])
