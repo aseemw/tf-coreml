@@ -449,7 +449,10 @@ def _infer_shapes(model_path, input_shape_dict = None):
         for inp in layer.input:
             assert inp in shape_dict, ('Input %s shape not cannot be determined' %(inp))
         layer_type = layer.WhichOneof('layer')
-        print('%d/%d: Calling Layer of type %s' %(i+1, len(layers), layer_type))
+        layer_type_print = layer_type
+        if layer_type == 'convolution' and layer.convolution.isDeconvolution:
+            layer_type_print = 'deconvolution'
+        print('%d/%d: Calling Layer of type %s' %(i+1, len(layers), layer_type_print))
         time.sleep(.01)
         fun = _get_translator_function(layer_type)
         fun(layer, shape_dict)
