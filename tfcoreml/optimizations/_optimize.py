@@ -326,8 +326,7 @@ def _fuse_conv_mul_add(nn_layers):
   for i, layer in enumerate(nn_layers):
     layer_type = layer.WhichOneof('layer')
     #the pattern matching can go very deep
-    if layer_type == 'convolution' and \
-        layer.convolution.isDeconvolution == False:
+    if layer_type == 'convolution':
       conv_out = layer.output[0]
       #check if its followed by a 'multiply' or 'add'
       status_1, x_1, layer_id_1, layer_1_out = \
