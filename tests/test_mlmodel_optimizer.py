@@ -21,7 +21,7 @@ class CorrectnessTest(unittest.TestCase):
 
 class OptimizerTests(CorrectnessTest):
 
-  def test_pad_conv_crop_fusion(self):
+  def test_pad_conv_fusion(self):
 
     Cin = 3
     Cout = 5
@@ -29,15 +29,12 @@ class OptimizerTests(CorrectnessTest):
     Hin = 32
     Win = 18
     Xin = np.random.rand(Cin,Hin,Win)
-    # Test for several combinations of (pad,stride,crop)
-    # when 1+c*s=p : (5,2,2),(4,3,1),(6,3,2)
-    # when 1+c*s<p : (5,1,1),(5,2,1),(6,2,2)
-    # when 1+c*s>p : (3,2,2),(1,1,1),(2,3,1)
-    params = [(5,2,2),(4,3,1),(6,3,2),
-              (5,1,1),(5,2,1),(6,2,2),
-              (3,2,2),(1,1,1),(2,3,1)]
+    # Test for several combinations of (pad,stride)
+    params = [(5,2),(4,3),(6,3),
+              (5,1),(5,2),(6,2),
+              (3,2),(1,1),(2,3)]
     for param in params:
-      pad, stride, crop = param
+      pad, stride = param
       input_features = [('data', datatypes.Array(*(Cin, Hin, Win)))]
       output_features = [('output', None)]
       builder = neural_network.NeuralNetworkBuilder(input_features, output_features)
@@ -52,10 +49,7 @@ class OptimizerTests(CorrectnessTest):
                               border_mode='valid', groups=1,
                               W=np.random.rand(K, K, Cin, Cout),
                               b=None, has_bias=False,
-                              input_name='pad_out', output_name='conv_out')
-      builder.add_crop(name='crop',
-                       left=crop, right=crop, top=crop, bottom=crop,
-                       offset=0, input_names=['conv_out'],output_name='output')
+                              input_name='pad_out', output_name='output')
 
       #get unoptimized model
       original_spec = builder.spec
@@ -67,11 +61,8 @@ class OptimizerTests(CorrectnessTest):
 
       n_layers_original_model = len(model.get_spec().neuralNetwork.layers)
       n_layers_opt_model = len(model_opt.get_spec().neuralNetwork.layers)
-      self.assertEqual(n_layers_original_model, 3)
-      if pad < 1 + stride*crop:
-        self.assertEqual(n_layers_opt_model, 2)
-      else:
-        self.assertEqual(n_layers_opt_model, 1)
+      self.assertEqual(n_layers_original_model, 2)
+      self.assertEqual(n_layers_opt_model, 1)
 
       original_model_out = model.predict({'data':Xin})['output']
       opt_model_out = model_opt.predict({'data':Xin})['output']

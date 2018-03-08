@@ -364,6 +364,29 @@ class TFSimpleNetworkTest(TFNetworkTest):
     self._test_tf_model(graph,
         {"test_pad_conv/input:0":[1,32,18,3]}, output_name, delta=.05)
 
+  def test_dilated_conv(self):
+    #params: (Hin,Win,K,pad,dilation)
+    Cin = 3
+    Cout = 5
+    params = [(32,18,3,3),
+              (14,13,3,4),
+              (14,19,1,3),
+              (17,18,5,3),
+              (14,20,3,3)]
+    for param in params:
+      Hin, Win, K, d = param
+      graph = tf.Graph()
+      with graph.as_default() as g:
+        x = tf.placeholder(tf.float32, shape=[None,Hin,Win,Cin],
+                         name="test_pad_conv/input")
+        W = tf.Variable(tf.truncated_normal([K,K,Cin,Cout], stddev=1))
+        output = tf.nn.convolution(x,W,strides=[1,1], padding='VALID',
+                            dilation_rate=[d,d])
+
+      output_name = [output.op.name]
+      self._test_tf_model(graph,
+        {"test_pad_conv/input:0":[1,Hin,Win,Cin]}, output_name, delta=.05)
+
 class TFSingleLayersTest(TFNetworkTest):
   """ Small models from tensorflow.layers
   """

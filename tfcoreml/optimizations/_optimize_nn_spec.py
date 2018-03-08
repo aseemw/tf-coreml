@@ -43,12 +43,6 @@ def _optimize_pad_conv(nn_layers):
   _optimize._fuse_pad_conv(nn_layers)
 
 
-def _optimize_conv_crop(nn_layers):
-  """
-  Fuses conv-crop layers if conv contains valid padding that is more than the crop
-  """
-  _optimize._fuse_conv_crop(nn_layers)
-
 def optimize_nn_spec(spec):
   """
   Call a specific set of network optimizations
@@ -66,7 +60,6 @@ def optimize_nn_spec(spec):
   _optimize_fold_load_constants(nn_spec.layers)
   _optimize_spatial_reduce_operation(nn_spec.layers)
   _optimize_pad_conv(nn_spec.layers)
-  _optimize_conv_crop(nn_spec.layers)
   _optimize_conv_mul_add(nn_spec.layers)
   _optimize_disconnected_components(spec, nn_spec)
 

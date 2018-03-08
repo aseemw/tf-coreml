@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 from tensorflow.python.util import compat
 import numpy as np
 import tensorflow as tf
@@ -217,8 +218,8 @@ def conv2d(op, context):
   elif op.inputs[0].op.type == 'ExpandDims' and \
       op.inputs[0].op.inputs[0].op.type == 'SpaceToBatchND':
     op1 = op.inputs[0].op.inputs[0].op
-    Hin = context.shape_dict[op1.inputs[0].name][1]
-    Win = context.shape_dict[op1.inputs[0].name][2]
+    Hin = 1
+    Win = context.shape_dict[op.inputs[0].op.inputs[0].op.inputs[0].name][-2]
     df= context.consts[op1.inputs[1].name][0]
     dilation_factors[-1] = df
     padding = context.consts[op1.inputs[2].name]
@@ -233,7 +234,6 @@ def conv2d(op, context):
           if op2.type == 'BatchToSpaceND':
             crops = context.consts[op2.inputs[2].name]
             crop_values[0:2] = crops[0][0:2]
-
 
   if sum(crop_values) != 0:
     if borderMode != 'valid':
