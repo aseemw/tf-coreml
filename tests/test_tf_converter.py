@@ -678,6 +678,18 @@ class TFSingleLayersTest(TFNetworkTest):
         {"input:0":[1,5,5,6]}, output_name, delta=1e-2)
 
 
+  def test_leaky_relu(self):
+    graph = tf.Graph()
+    x = np.random.rand(1,5,5,6) - 0.5
+    with graph.as_default() as g:
+      x_input = tf.placeholder(tf.float32, shape=[None,5,5,6], name="input")
+      z = tf.nn.leaky_relu(x_input, 0.2, name='output')
+
+    output_name = [z.op.name]
+    self._test_tf_model_constant(graph,
+        {"input:0":[1,5,5,6]}, output_name, delta=1e-2)
+
+
 class TFSlimTest(TFNetworkTest):
   """Small models for tf.slim layers
   """

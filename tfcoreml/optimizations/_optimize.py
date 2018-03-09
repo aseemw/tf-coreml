@@ -407,6 +407,62 @@ def _fuse_pad_conv(nn_layers):
     del nn_layers[index]
 
 
+def _optimize_leaky_relu_pattern(nn_layers):
+  blob_dst, blob_src = _graph_info(nn_layers)
+
+  def is_followed_by_mul_max(out, lc_id):
+    status = [False, None, None, None]
+    if out in blob_dst and len(blob_dst[out]) == 1:
+      layer_id = blob_dst[out][0]
+      layer = nn_layers[layer_id]
+      if layer.WhichOneof('layer') == 'multiply' and \
+        len(layer.input) == 2:
+        #one parent of mul layer is LC, find the other parent
+        inps = [layer.input[0], layer.input[1]]
+        mul_parent = inps[abs(inps.index(out)-1)]
+        mul_out = layer.output[0]
+        if mul_out in blob_dst and len(blob_dst[mul_out]) == 1:
+          next_layer_id = blob_dst[mul_out][0]
+          next_layer = nn_layers[next_layer_id]
+          if next_layer.WhichOneof('layer') == 'max' and \
+            len(next_layer.input) == 2:
+            # one parent of max layer is mul_out, find the other parent
+            inps = [next_layer.input[0], next_layer.input[1]]
+            max_parent = inps[abs(inps.index(mul_out)-1)]
+            # check that the parent of max is same as parent of mul
+            if max_parent == mul_parent:
+              status[0] = True
+              status[1] = layer_id
+              status[2] = next_layer_id
+              status[3] = max_parent
+
+    return tuple(status)
+
+  def recast_max_as_leaky_relu(max_id, max_input, alpha):
+    nn_layers[max_id].activation.MergeFromString(b'')
+    params = nn_layers[max_id].activation
+    nn_layers[max_id].ClearField("input")
+    nn_layers[max_id].input.append(max_input)
+    params.leakyReLU.alpha = float(alpha)
+
+  layers_to_be_removed = []
+  # Go through the layers and find the 'load_constant-mul-max' pattern
+  for i, layer in enumerate(nn_layers):
+    layer_type = layer.WhichOneof('layer')
+    if layer_type == 'loadConstant':
+      alpha = np.array(layer.loadConstant.data.floatValue)
+      lc_out = layer.output[0]
+      if len(alpha) == 1 and alpha[0]>0:
+        alpha = alpha[0]
+        status, mul_id, max_id, max_parent = is_followed_by_mul_max(lc_out, i)
+        if status:
+          layers_to_be_removed.append(i)
+          layers_to_be_removed.append(mul_id)
+          recast_max_as_leaky_relu(max_id, max_parent, alpha)
+
+  for index in sorted(layers_to_be_removed, reverse=True):
+    del nn_layers[index]
+
 def _remove_disconnected_components(spec, nn_spec):
   nn_layers = nn_spec.layers
   #blob name to the index of the layer it is coming from

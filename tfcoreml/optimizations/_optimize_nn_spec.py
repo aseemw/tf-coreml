@@ -28,6 +28,21 @@ def _optimize_spatial_reduce_operation(nn_layers):
   _optimize._spatial_reduce_as_global_pool(nn_layers)
 
 
+def _optimize_leaky_relu(nn_layers):
+  """
+  TF maps leaky relu into the following pattern:
+  x ----> Multiply ----> Max ----> y
+              ^
+              |
+              |
+    load_constant (with a positive scalar)
+
+  This should be mapped to:
+  x ---> leaky_relu ---> y
+  """
+  _optimize._optimize_leaky_relu_pattern(nn_layers)
+
+
 def _optimize_disconnected_components(spec, nn_spec):
   """
   Removes from the CoreML NN graph all the layers that are not connected
@@ -59,6 +74,7 @@ def optimize_nn_spec(spec):
 
   _optimize_fold_load_constants(nn_spec.layers)
   _optimize_spatial_reduce_operation(nn_spec.layers)
+  _optimize_leaky_relu(nn_spec.layers)
   _optimize_pad_conv(nn_spec.layers)
   _optimize_conv_mul_add(nn_spec.layers)
   _optimize_disconnected_components(spec, nn_spec)
