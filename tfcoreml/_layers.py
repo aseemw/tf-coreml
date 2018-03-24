@@ -771,6 +771,9 @@ def greater(op, context):
   assert len(op.inputs[1].shape) == 0, "Op Greater conversion can't handle non-constant"
   input_name = compat.as_str_any(op.inputs[0].name)
   const_name = compat.as_str_any(op.inputs[1].name)
+  if const_name not in context.consts:
+    raise NotImplementedError('GreaterEqual op not fully supported by CoreML currently. \
+                              Please try to use the graph transform tool to simplify the frozen graph.')
   const_val = context.consts[const_name]
   alpha = 1000.0
   beta = 0.5 - alpha * const_val
@@ -832,14 +835,26 @@ def pad(op, context):
 
   input_name = compat.as_str_any(op.inputs[0].name)
   output_name = compat.as_str_any(op.outputs[0].name)
+  padding_input_name = compat.as_str_any(op.inputs[1].name)
 
-  paddings = context.consts[op.inputs[1].name]
-  top = paddings[1][0]
-  bottom = paddings[1][1]
-  left = paddings[2][0]
-  right = paddings[2][1]
-  channel_begin = paddings[3][0]
-  channel_end = paddings[3][1]
+  if padding_input_name in context.consts:
+    paddings = context.consts[op.inputs[1].name]
+  else:
+    paddings = context.session.run(padding_input_name, feed_dict=context.input_feed_dict)
+
+  if paddings.shape[0] == 4:
+    offset = 1
+  elif paddings.shape[0] == 3:
+    offset = 0
+  else:
+    raise NotImplementedError('Padding case not supported')
+
+  top = paddings[offset][0]
+  bottom = paddings[offset][1]
+  left = paddings[offset+1][0]
+  right = paddings[offset+1][1]
+  channel_begin = paddings[offset+2][0]
+  channel_end = paddings[offset+2][1]
 
   if channel_begin + channel_end == 0:
     context.builder.add_padding(
@@ -926,11 +941,13 @@ def resize_bilinear(op, context):
 
   shape = context.shape_dict[input_name]
 
-  assert (len(shape) == 4), 'Resize Bilinear: unrecognized 4-D shape'
+  assert (len(shape) == 4), 'Resize Bilinear: input must be a 4-D shape'
   assert (output_spatial_sizes[0] % shape[1] == 0), \
-      'Resize Bilinear: height upsampling factor must be an integer'
+    ("Resize Bilinear: height upsampling factor must be an integer "
+     "(input height = %d, output height = %d)" % (shape[1], output_spatial_sizes[0]))
   assert (output_spatial_sizes[1] % shape[2] == 0), \
-      'Resize Bilinear: width upsampling factor must be an integer'
+    ("Resize Bilinear: width upsampling factor must be an integer "
+      "(input height = %d, output height = %d)" % (shape[1], output_spatial_sizes[0]))
 
   upsample_factor_height = output_spatial_sizes[0] // shape[1]
   upsample_factor_width = output_spatial_sizes[1] // shape[2]
