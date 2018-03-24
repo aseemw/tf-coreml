@@ -88,7 +88,7 @@ def _find_skippable_ops(G, ops, output_names):
           unvisited_op_ids.remove(child_op)
           list_queue.append(child_op)
 
-  #remove all unvisited layers
+  #Collect all unvisited ops
   skip_ops = set()
   for i in unvisited_op_ids:
     skip_ops.add(ops[i].name)
