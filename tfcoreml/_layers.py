@@ -1190,6 +1190,8 @@ def slice(op, context):
 
   input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
+  input_shape = context.shape_dict[input_name]
+  output_shape = context.shape_dict[output_name]
 
   assert op.inputs[1].name in context.consts, \
       'Slice: begin index must be a constant'
@@ -1199,13 +1201,32 @@ def slice(op, context):
   begin = context.consts[compat.as_str_any(op.inputs[1].name)]
   size = context.consts[compat.as_str_any(op.inputs[2].name)]
 
-  input_shape = context.shape_dict[input_name]
+  # check for slice along the channel axis
   if len(input_shape) == 1 and len(begin) == 1 and len(size) == 1:
     context.builder.add_slice(
         output_name, input_name, output_name,
         'channel', int(begin[0]), int(begin[0]) + int(size[0]), 1)
+
+  # check for slice along the height and width axis
+  elif len(input_shape) == 4 and len(begin) == 4 and len(size) == 4 \
+        and begin[0] == 0 and begin[-1] == 0:
+    if begin[1] != 0 and begin[2] != 0:
+      tmp_output_name = output_name + '_height_sliced'
+      tmp_input_name = tmp_output_name
+    else:
+      tmp_output_name = output_name
+      tmp_input_name = input_name
+    if begin[1] != 0:
+      context.builder.add_slice(
+        tmp_output_name, input_name, tmp_output_name,
+          'height', int(begin[1]), int(begin[1]) + int(size[1]), 1)
+    if begin[2] != 0:
+      context.builder.add_slice(
+        output_name, tmp_input_name, output_name,
+          'width', int(begin[2]), int(begin[2]) + int(size[2]), 1)
   else:
-    assert False, 'Slice case not handled'
+    raise NotImplementedError('Slice case not handled '
+            '(input shape: %s, output shape: %s)'%(str(input_shape), str(output_shape)))
 
   context.translated[output_name] = True
 
