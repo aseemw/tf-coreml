@@ -702,13 +702,13 @@ def sub(op, context):
   context.translated[output_name] = True
 
 def rsqrt(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   context.builder.add_unary(output_name, input_name, output_name, 'rsqrt')
   context.translated[output_name] = True
 
 def relu(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   context.builder.add_activation(output_name, 'RELU', input_name, output_name)
   context.translated[output_name] = True
@@ -717,25 +717,25 @@ def relu(op, context):
     context.translated[op.outputs[2].name] = True
 
 def exp(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   context.builder.add_unary(output_name, input_name, output_name, 'exp')
   context.translated[output_name] = True
 
 def elu(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   context.builder.add_activation(output_name, 'ELU', input_name, output_name, 1.0)
   context.translated[output_name] = True
   
 def tanh(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   context.builder.add_activation(output_name, 'TANH', input_name, output_name)
   context.translated[output_name] = True  
 
 def relu6(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
 
   relu_output_name = 'relu_' + output_name
@@ -756,7 +756,7 @@ def relu6(op, context):
   context.translated[output_name] = True
 
 def softmax(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   context.builder.add_softmax(output_name, input_name, output_name)
   context.translated[output_name] = True
@@ -792,7 +792,7 @@ def reduce_min(op, context):
 
 def product(op, context):
 
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   start_ind = context.consts[op.inputs[1].name]
 
@@ -894,7 +894,7 @@ def squared_difference(op, context):
 
 def square(op, context):
 
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
 
   context.translated[output_name] = True
@@ -958,7 +958,7 @@ def resize_bilinear(op, context):
   context.translated[output_name] = True
 
 def sigmoid(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
 
   context.translated[output_name] = True
@@ -1022,7 +1022,7 @@ def minimum(op, context):
   context.translated[output_name] = True
 
 def shape(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   input_shape = context.shape_dict[input_name]
   if isinstance(input_shape, list):
@@ -1188,7 +1188,7 @@ def strided_slice(op, context):
 
 def slice(op, context):
 
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
 
   assert op.inputs[1].name in context.consts, \
@@ -1252,13 +1252,13 @@ def gather(op, context):
   context.translated[output_name] = True
 
 def reciprocal(op, context):
+  input_name = make_tensor(op.inputs[0], context)
   output_name = op.outputs[0].name
-  input_name = op.inputs[0].name
   context.builder.add_unary(output_name, input_name, output_name, 'inverse')
   context.translated[output_name] = True
 
 def lrn(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
 
   input_shape = context.shape_dict[input_name]
@@ -1275,7 +1275,7 @@ def lrn(op, context):
   context.translated[output_name] = True
 
 def log(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   context.builder.add_unary(output_name, input_name, output_name, 'log')
   context.translated[output_name] = True
@@ -1345,7 +1345,7 @@ def floormod(op, context):
   context.translated[output_name] = True
 
 def sqrt(op, context):
-  input_name = compat.as_str_any(op.inputs[0].name)
+  input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
   context.builder.add_unary(output_name, input_name, output_name, 'sqrt')
   context.translated[output_name] = True
