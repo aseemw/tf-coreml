@@ -725,8 +725,12 @@ def exp(op, context):
 def elu(op, context):
   input_name = make_tensor(op.inputs[0], context)
   output_name = compat.as_str_any(op.outputs[0].name)
-  context.builder.add_activation(output_name, 'ELU', input_name, output_name, 1.0)
+
+  output_of_mul = context.blob_graph[output_name][0].outputs[0].name
+
+  context.builder.add_activation(output_name, 'ELU', input_name, output_of_mul, 1.6733)
   context.translated[output_name] = True
+  context.translated[output_of_mul] = True
   
 def tanh(op, context):
   input_name = make_tensor(op.inputs[0], context)

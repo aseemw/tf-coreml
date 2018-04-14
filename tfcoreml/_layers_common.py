@@ -46,7 +46,10 @@ def skip(op, context):
     input_names.append(inp.name)
 
   if len(input_names) > 1:
-    del input_names[1:]
+    if op.type == 'Select':
+      del input_names[:-1]
+    else:
+      del input_names[1:]
 
   assert len(input_names) == 1, (
       'Skip op must have only 1 input:' +

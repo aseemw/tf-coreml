@@ -16,7 +16,8 @@ _OP_REGISTRY = {
     'SpaceToBatchND':_layers.space_to_batch,
     'BatchToSpaceND':_layers.batch_to_space,
     'ConcatV2' : _layers.concat,
-    'GreaterEqual' : _layers.greater, # TODO - need to handle it better
+    'GreaterEqual' : _layers.skip, # TODO - need to handle it better
+    'Select' : _layers.skip,
     'LogicalAnd' : _layers.mul, # TODO - need to handle it better
     'BiasAdd' : _layers.add,
     'Slice' : _layers.slice,

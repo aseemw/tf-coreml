@@ -67,8 +67,8 @@ def _reshape(op, blob_name, output_name, context):
     if dim in output_shape:
       idx = output_shape.index(dim)
       context.dim_labels[blob_name] = output_shape_label[idx]
-  else:
-    assert False, 'Reshape interpret shapes: Case not handled currently'
+  # else:
+  #   assert False, 'Reshape interpret shapes: Case not handled currently'
 
 def _broadcast_op(op, blob_name, output_name, context):
 
