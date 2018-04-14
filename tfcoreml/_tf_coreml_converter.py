@@ -9,7 +9,8 @@ from coremltools.models import datatypes, utils, MLModel
 from ._ops_to_layers import convert_ops_to_layers
 from . import _ops_to_layers
 from ._interpret_shapes import _interpret_shape as interpret_shape
-from ._tf_graph_transform import _topological_sort_ops
+#from ._tf_graph_transform import _transform_graph
+from ._tf_rearrange_ops import _topological_sort_ops
 from .optimizations._optimize_nn_spec import optimize_nn_spec
 
 # Context stores useful information about TF graph and the conversion process
@@ -150,12 +151,14 @@ def _convert_pb_to_mlmodel(tf_model_path,
   OPS = g.get_operations()
 
   # Perform some basic functions on the TF grpah:
-  # 1. Sort the ops in topological order
-  # 2. Check whether the graph has cycles, if yes, error out
-  # 3. Mark ops that are not connected to the output
-  # 4. Check for unsupported ops
-  OPS, skip_ops = _topological_sort_ops(OPS, output_feature_names) # do (1),(2),(3) listed above
-  _check_unsupported_ops(OPS, output_feature_names, skip_ops) # do (4) listed above
+  # 1. Simplify pre-defined patterns
+  # 2. Sort the ops in topological order
+  # 3. Check whether the graph has cycles, if yes, error out
+  # 4. Mark ops that are not connected to the output
+  # 5. Check for unsupported ops
+
+  OPS, skip_ops = _topological_sort_ops(OPS, output_feature_names) # do (2),(3),(4) listed above
+  _check_unsupported_ops(OPS, output_feature_names, skip_ops) # do (5) listed above
 
   SHAPE_DICT = {} #Tensor name --> shape ({str: list})
   CONSTS = {} #Const Tensor name --> value
