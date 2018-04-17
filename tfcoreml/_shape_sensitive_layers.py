@@ -263,9 +263,11 @@ def _add_reshape(op, context):
         if next_softmax_op.type == 'Reshape':
           final_shape = context.shape_dict[next_softmax_op.outputs[0].name]
           if input_shape == final_shape:
-            skip(op, context)
-            context.skip_ops.add(next_softmax_op.name)
-            return
+            if output_name not in context.output_names and \
+                output_softmax not in context.output_names:
+              skip(op, context)
+              context.skip_ops.add(next_softmax_op.name)
+              return
 
   # TODO - these cases of reshape are just for mobilenet and stylenet:
   # if target_shape == (1,X) ----> new_shape = (X,1,1)
@@ -275,29 +277,35 @@ def _add_reshape(op, context):
 
   mode = 0
   if len(target_shape) == 2:
-    if target_shape[1] != 1: #(1,X)
+    if len(input_shape) == 4 and input_shape[0] == 1 and \
+      target_shape[0] != 1 and target_shape[1] != 1:
+      # (1,H,W,C) -> (H*W, C)
+      new_shape = (1, target_shape[1], target_shape[0], 1)
+    elif target_shape[1] != 1 and target_shape[0] == 1: #(1,X)
       new_shape = (1, target_shape[1], 1, 1)
       if len(input_shape) == 4 or len(input_shape) == 3:
         # (N,H,W,C) --> (1,C) or (N,S,C) --> (N,1,W,C)
         mode = 1
-    else:
+    elif target_shape[1] == 0:
       new_shape = (1, 1, 1, target_shape[0])
-    context.builder.add_reshape(
-        output_name, input_name, output_name, new_shape, mode)
+    else:
+      raise TypeError('Reshape case not handled')
   elif len(target_shape) == 3:
     # Target shape is [H,W,C] --> [1, C, H, W]
     new_shape = (1, target_shape[2], target_shape[0], target_shape[1])
-    context.builder.add_reshape(
-        output_name, input_name, output_name, new_shape, 1)
+    mode = 1
   elif len(target_shape) == 4:
     new_shape = (
         target_shape[0], target_shape[3], target_shape[1], target_shape[2])
-    context.builder.add_reshape(
-        output_name, input_name, output_name, new_shape, 1)
+    mode = 1
   elif len(target_shape) == 1:
     new_shape = (1,target_shape[0],1,1)
-    context.builder.add_reshape(
-      output_name, input_name, output_name, new_shape, 1)
+    mode = 1
+  else:
+    raise TypeError('Reshape case not handled')
+
+  context.builder.add_reshape(
+    output_name, input_name, output_name, new_shape, mode)
 
   context.translated[output_name] = True
 

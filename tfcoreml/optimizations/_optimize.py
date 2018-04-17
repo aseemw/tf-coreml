@@ -521,6 +521,33 @@ def _remove_disconnected_components(spec, nn_spec):
   for index in sorted(unvisited_layer_ids.keys(), reverse=True):
     del nn_layers[index]
 
+def _remove_identity(spec, nn_spec):
+  nn_layers = nn_spec.layers
+  model_outputs = [out.name for out in spec.description.output]
+
+  _, blob_src = _graph_info(nn_layers)
+  layers_to_be_removed = []
+
+  for i, layer in enumerate(nn_layers):
+    layer_type = layer.WhichOneof('layer')
+    if layer_type == 'activation':
+      params = layer.activation
+      if params.WhichOneof('NonlinearityType') == 'linear':
+        if params.linear.alpha == 1 and params.linear.beta == 0:
+          if layer.output[0] in model_outputs:
+            parent_layer = nn_layers[blob_src[layer.input[0]]]
+            for j, out in enumerate(parent_layer.output):
+              if out == layer.input[0]:
+                parent_layer.output[j] = layer.output[0]
+            layers_to_be_removed.append(i)
+
+  for index in sorted(layers_to_be_removed, reverse=True):
+    del nn_layers[index]
+
+
+
+
+
 
 
 
