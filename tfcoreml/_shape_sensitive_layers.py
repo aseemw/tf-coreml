@@ -253,6 +253,20 @@ def _add_reshape(op, context):
         op.outputs[0].consumers()[0].outputs[0].name)
     target_shape = context.shape_dict[squeezed_output_name]
 
+  # check for the pattern "reshape-softmax-reshape", it is common towards the end of graphs
+  if len(context.blob_graph[output_name]) == 1:
+    next_op = context.blob_graph[output_name][0]
+    if next_op.type == 'Softmax':
+      output_softmax = next_op.outputs[0].name
+      if len(context.blob_graph[output_softmax]) == 1:
+        next_softmax_op = context.blob_graph[output_softmax][0]
+        if next_softmax_op.type == 'Reshape':
+          final_shape = context.shape_dict[next_softmax_op.outputs[0].name]
+          if input_shape == final_shape:
+            skip(op, context)
+            context.skip_ops.add(next_softmax_op.name)
+            return
+
   # TODO - these cases of reshape are just for mobilenet and stylenet:
   # if target_shape == (1,X) ----> new_shape = (X,1,1)
   # if target_shape == (X,1) -----> new_shape = (1,1,X)
