@@ -281,15 +281,13 @@ def _add_reshape(op, context):
       target_shape[0] != 1 and target_shape[1] != 1:
       # (1,H,W,C) -> (H*W, C)
       new_shape = (1, target_shape[1], target_shape[0], 1)
-    elif target_shape[1] != 1 and target_shape[0] == 1: #(1,X)
+    elif target_shape[1] != 1: #(1,X)
       new_shape = (1, target_shape[1], 1, 1)
       if len(input_shape) == 4 or len(input_shape) == 3:
         # (N,H,W,C) --> (1,C) or (N,S,C) --> (N,1,W,C)
         mode = 1
-    elif target_shape[1] == 0:
-      new_shape = (1, 1, 1, target_shape[0])
     else:
-      raise TypeError('Reshape case not handled')
+      new_shape = (1, 1, 1, target_shape[0])
   elif len(target_shape) == 3:
     # Target shape is [H,W,C] --> [1, C, H, W]
     new_shape = (1, target_shape[2], target_shape[0], target_shape[1])
