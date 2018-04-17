@@ -83,7 +83,7 @@ def _broadcast_op(op, blob_name, output_name, context):
   dim_labels = ['' for i in input_shape]
 
   if not (len(input_shape) < 4 and len(input_shape) > 0 and
-      len(input_shape) > 0):
+      len(output_shape) == 4):
     return
 
   #Handle the case when input shape is [C] 
