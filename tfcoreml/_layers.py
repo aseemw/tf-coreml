@@ -1146,16 +1146,24 @@ def strided_slice(op, context):
   [x, y] = context.session.run([input_name, output_name],
                                feed_dict=context.input_feed_dict)
 
-  assert op.inputs[1].name in context.consts, \
-      'Strided Slice: begin index must be a constant'
-  assert op.inputs[2].name in context.consts, \
-      'Strided Slice: end index must be a constant'
-  assert op.inputs[3].name in context.consts, \
-      'Strided Slice: strides must be a constant'
+  if op.inputs[1].name in context.consts:
+    begin = context.consts[compat.as_str_any(op.inputs[1].name)]
+  else:
+    begin = context.session.run(op.inputs[1].name,
+                      feed_dict=context.input_feed_dict)
 
-  begin = context.consts[compat.as_str_any(op.inputs[1].name)]
-  end = context.consts[compat.as_str_any(op.inputs[2].name)]
-  strides = context.consts[compat.as_str_any(op.inputs[3].name)]
+  if op.inputs[2].name in context.consts:
+    end = context.consts[compat.as_str_any(op.inputs[2].name)]
+  else:
+    end = context.session.run(op.inputs[2].name,
+                      feed_dict=context.input_feed_dict)
+
+  if op.inputs[3].name in context.consts:
+    strides = context.consts[compat.as_str_any(op.inputs[3].name)]
+  else:
+    strides = context.session.run(op.inputs[3].name,
+                      feed_dict=context.input_feed_dict)
+
   begin_mask = op.get_attr('begin_mask')
   end_mask = op.get_attr('end_mask')
   ellipsis_mask = op.get_attr('ellipsis_mask')
@@ -1193,13 +1201,17 @@ def slice(op, context):
   input_shape = context.shape_dict[input_name]
   output_shape = context.shape_dict[output_name]
 
-  assert op.inputs[1].name in context.consts, \
-      'Slice: begin index must be a constant'
-  assert op.inputs[2].name in context.consts, \
-      'Slice: size must be a constant'
+  if op.inputs[1].name in context.consts:
+    begin = context.consts[compat.as_str_any(op.inputs[1].name)]
+  else:
+    begin = context.session.run(op.inputs[1].name,
+                      feed_dict=context.input_feed_dict)
 
-  begin = context.consts[compat.as_str_any(op.inputs[1].name)]
-  size = context.consts[compat.as_str_any(op.inputs[2].name)]
+  if op.inputs[2].name in context.consts:
+    size = context.consts[compat.as_str_any(op.inputs[2].name)]
+  else:
+    size = context.session.run(op.inputs[2].name,
+                      feed_dict=context.input_feed_dict)
 
   # check for slice along the channel axis
   if len(input_shape) == 1 and len(begin) == 1 and len(size) == 1:
