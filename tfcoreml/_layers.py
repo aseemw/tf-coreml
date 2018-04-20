@@ -117,6 +117,9 @@ def conv2d(op, context):
   W_name = compat.as_str_any(op.inputs[1].name)
   output_name = compat.as_str_any(op.outputs[0].name)
 
+  if x_name in context.consts:
+    add_const(context, x_name, context.consts[x_name], x_name)
+
   #get input's height and width
   Hin = context.shape_dict[x_name][1]
   Win = context.shape_dict[x_name][2]
