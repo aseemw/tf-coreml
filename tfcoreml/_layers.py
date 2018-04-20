@@ -632,6 +632,8 @@ def add(op, context):
     broadcasted_shape4 = _get_broadcasted_shape4(input_shapes)
     for idx, in_name in enumerate(input_names):
       input_shape = input_shapes[idx]
+      if len(input_shape) == 1 and input_shape[0] == broadcasted_shape4[-1]:
+        continue
       axis = _broadcast_axis(broadcasted_shape4, input_shape)
       if axis is not None:
         # add upsample layer
@@ -667,6 +669,8 @@ def mul(op, context):
     broadcasted_shape4 = _get_broadcasted_shape4(input_shapes)
     for idx, in_name in enumerate(input_names):
       input_shape = input_shapes[idx]
+      if len(input_shape) == 1 and input_shape[0] == broadcasted_shape4[-1]:
+        continue
       axis = _broadcast_axis(broadcasted_shape4, input_shape)
       if axis is not None:
         # add upsample layer
