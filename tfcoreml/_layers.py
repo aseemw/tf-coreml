@@ -355,10 +355,12 @@ def avgpool(op, context):
   output_name = compat.as_str_any(op.outputs[0].name)
 
   inp_shape = context.shape_dict[x_name]
+
   # Unlike conv that uses width axis for 1D computation,
   # Tensorflow uses height axis for 1D pooling. For 1D case we need to swap
   # height and width.
-  is_1d = (inp_shape[1] > 1 and inp_shape[2] == 1)
+  #is_1d = (inp_shape[1] > 1 and inp_shape[2] == 1)
+  is_1d = op.inputs[0].op.type == 'ExpandDims'
 
   W_shape = op.get_attr('ksize')
   height = W_shape[2] if is_1d else W_shape[1]
@@ -384,10 +386,9 @@ def avgpool(op, context):
 def maxpool(op, context):
   x_name = compat.as_str_any(op.inputs[0].name)
   output_name = compat.as_str_any(op.outputs[0].name)
-
   inp_shape = context.shape_dict[x_name]
-
-  is_1d = (inp_shape[1] > 1 and inp_shape[2] == 1)
+  #is_1d = (inp_shape[1] > 1 and inp_shape[2] == 1)
+  is_1d = op.inputs[0].op.type == 'ExpandDims'
 
   W_shape = op.get_attr('ksize')
   height = W_shape[2] if is_1d else W_shape[1]
