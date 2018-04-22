@@ -1172,7 +1172,7 @@ def gather(op, context):
   output_shape = context.shape_dict[output_name]
 
   assert len(context.shape_dict[op.inputs[0].name]) == 1, (
-        'first input to \'gather\' must be a 1-D tensor. Input shape = {}, output shape ={}'.
+        'first input to \'gather\' must be a 1-D tensor. Input shape = {}, output shape = {}'.
           format(str(input_shape), str(output_shape)))
   assert op.inputs[1].name in context.consts, (
          'second input to \'gather\' must be a constant')
