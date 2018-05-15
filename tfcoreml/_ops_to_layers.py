@@ -1,91 +1,101 @@
 from tensorflow.python.util import compat
 from . import _layers
 
-_OP_REGISTRY = {
-    'NoOp': _layers.skip,
-    'ExpandDims' : _layers.skip,
-    'Cast' : _layers.skip,
-    'Squeeze' : _layers.skip,
-    'StopGradient' : _layers.skip,
-    'CheckNumerics' : _layers.skip,
-    'Floor' : _layers.skip, # TODO - need to handle it better
-    'Assert' : _layers.skip,
-    'Equal' : _layers.skip,
-    'All' : _layers.skip,
-    'Pack' : _layers.skip, # TODO - need to handle it better
-    'SpaceToBatchND':_layers.space_to_batch,
-    'BatchToSpaceND':_layers.batch_to_space,
-    'ConcatV2' : _layers.concat,
-    'GreaterEqual' : _layers.greater, # TODO - need to handle it better
-    'LogicalAnd' : _layers.mul, # TODO - need to handle it better
-    'BiasAdd' : _layers.add,
-    'Slice' : _layers.slice,
-    'StridedSlice' : _layers.strided_slice,
-    'Fill': _layers.fill,
-    'ExtractImagePatches': _layers.extract_image_patches,
-    'ArgMax': _layers.argmax,
-    # TODO - CoreML not supporting random numbers
-    'RandomUniform': _layers.random,
-    'Shape': _layers.shape,
-    'Maximum': _layers.maximum,
-    'RealDiv': _layers.real_div,
-    'Transpose': _layers.transpose, # TODO - only works 4D tensors
-    'Sigmoid': _layers.sigmoid,
-    'ResizeNearestNeighbor': _layers.resize_nearest_neighbor,
-    'ResizeBilinear': _layers.resize_bilinear,
-    'Square': _layers.square,
-    'SquaredDifference': _layers.squared_difference,
-    'Pad' : _layers.pad,
-    'MirrorPad': _layers.mirror_pad,
-    'Mean': _layers.mean, # TODO - there're unsupported configurations
-    'Prod': _layers.product, # TODO - there're unsupported configurations
-    'Sum': _layers.reduce_sum, # TODO - there're unsupported configurations
-    'Max': _layers.reduce_max, # TODO - there're unsupported configurations
-    'Min': _layers.reduce_min, # TODO - there're unsupported configurations
-    'Greater': _layers.greater, # TODO - only works for x > c where c is const
-    'Const': _layers.constant,
-    'Softmax': _layers.softmax,
-    'Relu6': _layers.relu6,
-    'Relu': _layers.relu,
-    'QuantizedRelu': _layers.relu,
-    'Rsqrt': _layers.rsqrt,
-    'Add': _layers.add,
-    'Sub': _layers.sub,
-    'Mul': _layers.mul,
-    'Neg': _layers.neg,
-    'MatMul': _layers.inner_product,
-    'DepthwiseConv2dNative': _layers.conv2d,
-    'MaxPool': _layers.maxpool,
-    'AvgPool': _layers.avgpool,
-    'Conv2DBackpropInput': _layers.deconv2d,
-    'Conv2D': _layers.conv2d,
-    'QuantizedConv2D': _layers.conv2d,
-    'Reshape': _layers.reshape,
-    'Concat': _layers.concat,
-    'BatchNormWithGlobalNormalization': _layers.batchnorm,
-    'Identity': _layers.identity,
-    'OneHot': _layers.one_hot,
-    'Placeholder': _layers.placeholder,
-    'Elu': _layers.elu,
-    'QuantizeV2': _layers.skip_one_to_one,
-    'QuantizedReshape': _layers.reshape,
-    'Dequantize': _layers.skip,
-    'RequantizationRange': _layers.skip,
-    'Requantize': _layers.skip,
-    'Gather': _layers.gather,  # TODO- handled in a very limited setting
-    'Reciprocal': _layers.reciprocal,
-    'FusedBatchNorm':_layers.batchnorm,
-    'LRN': _layers.lrn,
-    'Tanh': _layers.tanh,
-    'PlaceholderWithDefault': _layers.skip,
-    'Log': _layers.log,
-    'Minimum': _layers.minimum,
-    'Exp': _layers.exp,
-    'FloorMod': _layers.floormod, #TODO-works when this op's output does not depend on network's input values
-    'Split': _layers.split,
-    'Sqrt': _layers.sqrt,
-    'Pow': _layers.pow
+_CORE_OPS = {
+  # core
+  'SpaceToBatchND': _layers.space_to_batch,
+  'BatchToSpaceND': _layers.batch_to_space,
+  'ConcatV2': _layers.concat,
+  'Concat': _layers.concat,
+  'BiasAdd': _layers.add,
+  'ExtractImagePatches': _layers.extract_image_patches,
+  'ArgMax': _layers.argmax,
+  'Maximum': _layers.maximum,
+  'RealDiv': _layers.real_div,
+  'Sigmoid': _layers.sigmoid,
+  'ResizeNearestNeighbor': _layers.resize_nearest_neighbor,
+  'Square': _layers.square,
+  'SquaredDifference': _layers.squared_difference,
+  'Pad': _layers.pad,
+  'MirrorPad': _layers.mirror_pad,
+  'Softmax': _layers.softmax,
+  'Relu6': _layers.relu6,
+  'Relu': _layers.relu,
+  'QuantizedRelu': _layers.relu,
+  'Rsqrt': _layers.rsqrt,
+  'Add': _layers.add,
+  'Sub': _layers.sub,
+  'Mul': _layers.mul,
+  'Neg': _layers.neg,
+  'MatMul': _layers.inner_product,
+  'DepthwiseConv2dNative': _layers.conv2d,
+  'MaxPool': _layers.maxpool,
+  'AvgPool': _layers.avgpool,
+  'Conv2DBackpropInput': _layers.deconv2d,
+  'Conv2D': _layers.conv2d,
+  'QuantizedConv2D': _layers.conv2d,
+  'BatchNormWithGlobalNormalization': _layers.batchnorm,
+  'Elu': _layers.elu,
+  'Split': _layers.split,
+  'Sqrt': _layers.sqrt,
+  'Pow': _layers.pow,
+  'Log': _layers.log,
+  'Minimum': _layers.minimum,
+  'Exp': _layers.exp,
+  'Reciprocal': _layers.reciprocal,
+  'FusedBatchNorm': _layers.batchnorm,
+  'LRN': _layers.lrn,
+  'Tanh': _layers.tanh,
+  'Mean': _layers.mean,  # TODO - there're unsupported configurations
+  'Prod': _layers.product,  # TODO - there're unsupported configurations
+  'Sum': _layers.reduce_sum,  # TODO - there're unsupported configurations
+  'Max': _layers.reduce_max,  # TODO - there're unsupported configurations
+  'Min': _layers.reduce_min,  # TODO - there're unsupported configurations
+  'Transpose': _layers.transpose,  # TODO - only works 4D tensors
+  'Reshape': _layers.reshape,
+  'QuantizedReshape': _layers.reshape,
+  'Identity': _layers.identity,
 }
+
+_NON_CORE_OPS = {
+  # partially supported
+  'Slice': _layers.slice,
+  'StridedSlice': _layers.strided_slice,
+  'ResizeBilinear': _layers.resize_bilinear,
+  'OneHot': _layers.one_hot,
+  'Placeholder': _layers.placeholder,
+
+  # dummy for CoreML
+  'NoOp': _layers.skip,
+  'ExpandDims' : _layers.skip,
+  'Cast': _layers.skip,
+  'Squeeze': _layers.skip,
+  'StopGradient': _layers.skip,
+  'CheckNumerics': _layers.skip,
+  'Const': _layers.constant,
+  'QuantizeV2': _layers.skip_one_to_one,
+  'Dequantize': _layers.skip,
+  'RequantizationRange': _layers.skip,
+  'Requantize': _layers.skip,
+  'PlaceholderWithDefault': _layers.skip,
+
+  # generally upsupported
+  # 'Floor' : _layers.skip, # TODO - need to handle it better
+  # 'Assert' : _layers.skip,
+  # 'Equal' : _layers.skip,
+  # 'All' : _layers.skip,
+  # 'Pack' : _layers.skip, # TODO - need to handle it better
+  # 'GreaterEqual' : _layers.greater, # TODO - need to handle it better
+  # 'LogicalAnd' : _layers.mul, # TODO - need to handle it better
+  # 'Fill': _layers.fill,
+  # 'RandomUniform': _layers.random, # TODO - CoreML not supporting random numbers
+  # 'Shape': _layers.shape,
+  # 'Greater': _layers.greater, # TODO - only works for x > c where c is const
+  # 'FloorMod': _layers.floormod, #TODO-works when this op's output does not depend on network's input values
+  # 'Gather': _layers.gather,  # TODO- handled in a very limited setting
+}
+
+_OP_REGISTRY = dict(_CORE_OPS, **_NON_CORE_OPS)
 
 def _get_translator_function(op_type):
   """Get the right translator function
@@ -131,6 +141,7 @@ def stop_translation(context):
 
 def convert_ops_to_layers(context):
   for i, op in enumerate(context.all_ops):
+    #print(i+1, len(context.all_ops) , op.type, op.name)
     if stop_translation(context):
       connect_skipped_ops(context)
       return
@@ -143,7 +154,11 @@ def convert_ops_to_layers(context):
       else:
         raise TypeError("Translation function missing for op of type %s." % op.type)
       if translation_required(op, context):
-        print('%d/%d: Converting op name: %s ( type:  %s )' % (
+        if translator == _layers.skip:
+          print('%d/%d: Skipping op name: %s ( type:  %s )' % (
+            i + 1, len(context.all_ops), op.name, op.type))
+        else:
+          print('%d/%d: Converting op name: %s ( type:  %s )' % (
             i+1, len(context.all_ops), op.name, op.type))
         translator(op, context)
       connect_skipped_ops(context)
