@@ -9,7 +9,7 @@ from coremltools.models import datatypes, utils, MLModel
 from ._ops_to_layers import convert_ops_to_layers
 from . import _ops_to_layers
 from ._interpret_shapes import _interpret_shape as interpret_shape
-from ._tf_graph_transform import _topological_sort_ops
+from ._tf_graph_transform import _topological_sort_ops, _find_unused_ops
 from .optimizations._optimize_nn_spec import optimize_nn_spec
 
 # Context stores useful information about TF graph and the conversion process
@@ -40,8 +40,8 @@ class Context(object):
     self.use_dfs_shape_infer = True #True
     self.session = None
     self.input_feed_dict = None
-    #op names that can be skipped as they are not connected to the output
-    self.skip_ops = set()
+    self.unused_ops = [] # list of op names that can be skipped for conversion as they do not connect to the output
+    self.effectively_constant_ops = [] # list of ops that are not of type "Const", but their output does not change with differently valued graph input
 
 def _infer_coreml_input_shape(tf_shape):
   """Infer CoreML input shape from TensorFlow shape.
@@ -122,7 +122,7 @@ def _check_unsupported_ops(ops, output_feature_names, skip_ops):
 def _convert_pb_to_mlmodel(tf_model_path,
                            mlmodel_path,
                            output_feature_names,
-                           input_name_shape_dict=None,
+                           input_name_shape_dict={},
                            image_input_names=None,
                            is_bgr=False,
                            red_bias=0.0,
@@ -133,8 +133,7 @@ def _convert_pb_to_mlmodel(tf_model_path,
                            class_labels=None,
                            predicted_feature_name=None,
                            predicted_probabilities_output=''):
-  if input_name_shape_dict is None:
-    input_name_shape_dict = {}
+
   # Load the TF graph
   with open(tf_model_path, 'rb') as f:
     serialized = f.read()
@@ -155,11 +154,8 @@ def _convert_pb_to_mlmodel(tf_model_path,
                               "pre-processing from the TF graph before conversion to CoreML.")
 
 
-  # Perform some basic functions on the TF graph:
-  # 1. Sort the ops in topological order
-  # 2. Check whether the graph has cycles, if yes, error out
-  # 3. Mark ops that are not connected to the output
-  OPS, skip_ops = _topological_sort_ops(OPS, output_feature_names) # do (1),(2),(3) listed above, "skip_ops": not connected to the output
+  # Sort the ops in topological order and check whether the graph has cycles, if yes, error out
+  OPS = _topological_sort_ops(OPS)
 
   SHAPE_DICT = {} #Tensor name --> shape ({str: list})
   CONSTS = {} #Const Tensor name --> value
@@ -252,38 +248,14 @@ def _convert_pb_to_mlmodel(tf_model_path,
       if given_out_name not in all_out_names_in_graph:
         raise ValueError("output name: {}, was provided, but the Tensorflow graph does not contain a tensor with this name.".format(given_out_name))
 
-  # Find skippable ops: ops whose output(s) do not change with different valued inputs
-  tensors_to_evaluate = [] # [(str, tensor)]
-  op_name_to_out_ids = {} # {str: [ints]}
-  ctr = 0
-  for op in OPS:
-    if op.type not in _ops_to_layers._CORE_OPS:
-      ids = []
-      for out in op.outputs:
-        tensors_to_evaluate.append((compat.as_str_any(out.name), out))
-        ids.append(ctr)
-        ctr += 1
-      op_name_to_out_ids[op.name] = ids
 
-  if len(tensors_to_evaluate) > 0:
-    tensor_names, tensors = zip(*tensors_to_evaluate)
-    tensors_evaluated1 = sess.run(tensors, feed_dict=input_feed_dict)
-    tensors_evaluated2 = sess.run(tensors, feed_dict=input_feed_dict2)
-    for op_name in list(op_name_to_out_ids.keys()):
-      is_this_skippable = True
-      for idx in op_name_to_out_ids[op_name]:
-        out1 = tensors_evaluated1[idx].flatten()
-        out2 = tensors_evaluated2[idx].flatten()
-        if np.amax(np.abs(out1-out2)) > 1e-6:
-          is_this_skippable = False
-          break
-      if is_this_skippable:
-        skip_ops.add(op_name)
-
-  _check_unsupported_ops(OPS, output_feature_names, skip_ops)
+  # Find "effectively_constant_ops": ops whose output(s) do not change with different valued inputs
+  # Find "unused_ops" : ops that are not connected to the output(s)
+  unused_ops, effectively_constant_ops = _find_unused_ops(OPS, sess, output_feature_names, input_feed_dict, input_feed_dict2) # return type: List[str], List[str]
+  _check_unsupported_ops(OPS, output_feature_names, effectively_constant_ops + unused_ops)
 
 
-  # Load all the dictionaries in the object of class context
+  # Load all the dictionaries in the object of the class "context"
   context = Context(CONSTS, SHAPE_DICT, OPS, BLOB_GRAPH, output_features)
 
   # Interpret Input shapes and fill in input information for Core ML
@@ -327,15 +299,16 @@ def _convert_pb_to_mlmodel(tf_model_path,
   context.builder = builder
   context.session = sess
   context.input_feed_dict = input_feed_dict
-  context.skip_ops = skip_ops
+  context.unused_ops = unused_ops
+  context.effectively_constant_ops = effectively_constant_ops
   convert_ops_to_layers(context)
   sess.close()
 
   import coremltools
-  coremltools.models.utils.save_spec(builder.spec, '/tmp/m2.mlmodel')
+  coremltools.models.utils.save_spec(builder.spec, '/tmp/m1.mlmodel')
 
   #optimizations on the nn spec
-  optimize_nn_spec(spec=builder.spec)
+  #optimize_nn_spec(spec=builder.spec)
 
   #Add a description for inputs that are sequences
   for i, inputs in enumerate(builder.spec.description.input):

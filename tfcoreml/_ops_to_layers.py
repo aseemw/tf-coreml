@@ -1,5 +1,6 @@
 from tensorflow.python.util import compat
 from . import _layers
+from . import _layers_common
 
 _CORE_OPS = {
   # core
@@ -52,19 +53,16 @@ _CORE_OPS = {
   'Max': _layers.reduce_max,  # TODO - there're unsupported configurations
   'Min': _layers.reduce_min,  # TODO - there're unsupported configurations
   'Transpose': _layers.transpose,  # TODO - only works 4D tensors
+  'ResizeBilinear': _layers.resize_bilinear, #TODO: there're unsupported configurations
   'Reshape': _layers.reshape,
+  'OneHot': _layers.one_hot,
   'QuantizedReshape': _layers.reshape,
   'Identity': _layers.identity,
+  'Placeholder': _layers.placeholder,
+  'Const': _layers.constant,
 }
 
 _NON_CORE_OPS = {
-  # partially supported
-  'Slice': _layers.slice,
-  'StridedSlice': _layers.strided_slice,
-  'ResizeBilinear': _layers.resize_bilinear,
-  'OneHot': _layers.one_hot,
-  'Placeholder': _layers.placeholder,
-
   # dummy for CoreML
   'NoOp': _layers.skip,
   'ExpandDims' : _layers.skip,
@@ -72,19 +70,18 @@ _NON_CORE_OPS = {
   'Squeeze': _layers.skip,
   'StopGradient': _layers.skip,
   'CheckNumerics': _layers.skip,
-  'Const': _layers.constant,
+
   'QuantizeV2': _layers.skip_one_to_one,
   'Dequantize': _layers.skip,
   'RequantizationRange': _layers.skip,
   'Requantize': _layers.skip,
   'PlaceholderWithDefault': _layers.skip,
 
+  # partially supported
+  'Slice': _layers.slice,
+  'StridedSlice': _layers.strided_slice,
+
   # generally upsupported
-  # 'Floor' : _layers.skip, # TODO - need to handle it better
-  # 'Assert' : _layers.skip,
-  # 'Equal' : _layers.skip,
-  # 'All' : _layers.skip,
-  # 'Pack' : _layers.skip, # TODO - need to handle it better
   # 'GreaterEqual' : _layers.greater, # TODO - need to handle it better
   # 'LogicalAnd' : _layers.mul, # TODO - need to handle it better
   # 'Fill': _layers.fill,
@@ -93,6 +90,12 @@ _NON_CORE_OPS = {
   # 'Greater': _layers.greater, # TODO - only works for x > c where c is const
   # 'FloorMod': _layers.floormod, #TODO-works when this op's output does not depend on network's input values
   # 'Gather': _layers.gather,  # TODO- handled in a very limited setting
+  #
+  # 'Floor': _layers.skip,  # TODO - need to handle it better
+  # 'Assert': _layers.skip,
+  # 'Equal': _layers.skip,
+  # 'All': _layers.skip,
+  # 'Pack': _layers.skip,  # TODO - need to handle it better
 }
 
 _OP_REGISTRY = dict(_CORE_OPS, **_NON_CORE_OPS)
@@ -141,18 +144,21 @@ def stop_translation(context):
 
 def convert_ops_to_layers(context):
   for i, op in enumerate(context.all_ops):
-    #print(i+1, len(context.all_ops) , op.type, op.name)
+    print(i+1, len(context.all_ops) , op.type, op.name)
     if stop_translation(context):
       connect_skipped_ops(context)
       return
     else:
-      check(op, context)
-      if op.name in context.skip_ops:
-        translator = _layers.skip
+      if op.name in context.unused_ops:
+        continue
+      elif op.name in context.effectively_constant_ops:
+        translator = _layers_common.effectively_constant_op
       elif op.type in _OP_REGISTRY:
+        check(op, context)
         translator = _get_translator_function(op.type)
       else:
         raise TypeError("Translation function missing for op of type %s." % op.type)
+
       if translation_required(op, context):
         if translator == _layers.skip:
           print('%d/%d: Skipping op name: %s ( type:  %s )' % (
