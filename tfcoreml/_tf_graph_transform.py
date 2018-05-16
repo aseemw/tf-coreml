@@ -159,9 +159,6 @@ def _find_unused_ops(ops, sess, output_names, feed_dict1, feed_dict2):
   for i in unvisited_op_ids:
     unused_op_names.append(ops[i].name)
 
-  import ipdb
-  ipdb.set_trace()
-
   return unused_op_names, effective_const_op_names
 
 

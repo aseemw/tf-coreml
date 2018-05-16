@@ -144,7 +144,8 @@ def stop_translation(context):
 
 def convert_ops_to_layers(context):
   for i, op in enumerate(context.all_ops):
-    print(i+1, len(context.all_ops) , op.type, op.name)
+    print('%d/%d: Analysing op name: %s ( type:  %s )' % (
+      i + 1, len(context.all_ops), op.name, op.type))
     if stop_translation(context):
       connect_skipped_ops(context)
       return
@@ -160,11 +161,5 @@ def convert_ops_to_layers(context):
         raise TypeError("Translation function missing for op of type %s." % op.type)
 
       if translation_required(op, context):
-        if translator == _layers.skip:
-          print('%d/%d: Skipping op name: %s ( type:  %s )' % (
-            i + 1, len(context.all_ops), op.name, op.type))
-        else:
-          print('%d/%d: Converting op name: %s ( type:  %s )' % (
-            i+1, len(context.all_ops), op.name, op.type))
         translator(op, context)
       connect_skipped_ops(context)

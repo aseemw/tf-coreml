@@ -69,3 +69,4 @@ def effectively_constant_op(op, context):
   for out in op.outputs:
     x = context.session.run(out, feed_dict=context.input_feed_dict)
     add_const(context, out.name, x, out.name)
+    context.translated[out.name] = True

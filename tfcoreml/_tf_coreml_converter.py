@@ -304,11 +304,11 @@ def _convert_pb_to_mlmodel(tf_model_path,
   convert_ops_to_layers(context)
   sess.close()
 
-  import coremltools
-  coremltools.models.utils.save_spec(builder.spec, '/tmp/m1.mlmodel')
+  # import coremltools
+  # coremltools.models.utils.save_spec(builder.spec, '/tmp/m2.mlmodel')
 
   #optimizations on the nn spec
-  #optimize_nn_spec(spec=builder.spec)
+  optimize_nn_spec(spec=builder.spec)
 
   #Add a description for inputs that are sequences
   for i, inputs in enumerate(builder.spec.description.input):
