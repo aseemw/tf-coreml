@@ -42,6 +42,7 @@ class Context(object):
     self.input_feed_dict = None
     self.unused_ops = [] # list of op names that can be skipped for conversion as they do not connect to the output
     self.effectively_constant_ops = [] # list of ops that are not of type "Const", but their output does not change with differently valued graph input
+    self.skip_ops = []
 
 def _infer_coreml_input_shape(tf_shape):
   """Infer CoreML input shape from TensorFlow shape.
@@ -303,9 +304,6 @@ def _convert_pb_to_mlmodel(tf_model_path,
   context.effectively_constant_ops = effectively_constant_ops
   convert_ops_to_layers(context)
   sess.close()
-
-  # import coremltools
-  # coremltools.models.utils.save_spec(builder.spec, '/tmp/m2.mlmodel')
 
   #optimizations on the nn spec
   optimize_nn_spec(spec=builder.spec)

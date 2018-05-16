@@ -270,7 +270,7 @@ def _add_reshape(op, context):
             if output_name not in context.output_names and \
                 output_softmax not in context.output_names:
               skip(op, context)
-              context.skip_ops.add(next_softmax_op.name)
+              context.skip_ops.append(next_softmax_op.name)
               return
 
   # TODO - these cases of reshape are just for mobilenet and stylenet:

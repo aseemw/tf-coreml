@@ -82,16 +82,18 @@ _NON_CORE_OPS = {
   'StridedSlice': _layers.strided_slice,
 
   # generally upsupported
+  'RandomUniform': _layers.random, # TODO - CoreML not supporting random numbers
+  'Floor': _layers.skip,  # TODO - need to handle it better
+
+  # 'Shape': _layers.shape,
+  # 'Gather': _layers.gather,  # TODO- handled in a very limited setting
+
   # 'GreaterEqual' : _layers.greater, # TODO - need to handle it better
   # 'LogicalAnd' : _layers.mul, # TODO - need to handle it better
   # 'Fill': _layers.fill,
-  # 'RandomUniform': _layers.random, # TODO - CoreML not supporting random numbers
-  # 'Shape': _layers.shape,
   # 'Greater': _layers.greater, # TODO - only works for x > c where c is const
   # 'FloorMod': _layers.floormod, #TODO-works when this op's output does not depend on network's input values
-  # 'Gather': _layers.gather,  # TODO- handled in a very limited setting
-  #
-  # 'Floor': _layers.skip,  # TODO - need to handle it better
+
   # 'Assert': _layers.skip,
   # 'Equal': _layers.skip,
   # 'All': _layers.skip,
@@ -154,6 +156,8 @@ def convert_ops_to_layers(context):
         continue
       elif op.name in context.effectively_constant_ops:
         translator = _layers_common.effectively_constant_op
+      elif op.name in context.skip_ops:
+        translator = _layers.skip
       elif op.type in _OP_REGISTRY:
         check(op, context)
         translator = _get_translator_function(op.type)
