@@ -55,7 +55,7 @@ def _find_unused_ops(ops, sess, output_names, feed_dict1, feed_dict2):
   
   :return: [str], [str]: list of op names 
            - ununsed_op_names: they do not connect to the output
-           - effectively_constant_op_names: their outputs do not change with feeding different valued inputs
+           - effectively_constant_op_names: their outputs do not change with feeding different valued Graph inputs
   '''
   effective_const_ops_ids = [] # List[int]
   effective_const_op_names = [] # List[str]

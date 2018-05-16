@@ -250,7 +250,7 @@ def _convert_pb_to_mlmodel(tf_model_path,
         raise ValueError("output name: {}, was provided, but the Tensorflow graph does not contain a tensor with this name.".format(given_out_name))
 
 
-  # Find "effectively_constant_ops": ops whose output(s) do not change with different valued inputs
+  # Find "effectively_constant_ops": ops whose output(s) do not change with different valued Graph level inputs
   # Find "unused_ops" : ops that are not connected to the output(s)
   unused_ops, effectively_constant_ops = _find_unused_ops(OPS, sess, output_feature_names, input_feed_dict, input_feed_dict2) # return type: List[str], List[str]
   _check_unsupported_ops(OPS, output_feature_names, effectively_constant_ops + unused_ops)
