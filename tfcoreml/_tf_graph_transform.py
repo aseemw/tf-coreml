@@ -53,8 +53,9 @@ def _find_unused_ops(ops, sess, output_names, feed_dict1, feed_dict2):
   :param output_names: [str]: list of output names
   :param feed_dict1, feed_dict2: two input feed dictionaries with different valued inputs
   
-  :return: a set of op names that can be skipped during conversion
-           because (a) they do not connect to the output or (b) their outputs do not change with feeding different valued inputs
+  :return: [str], [str]: list of op names 
+           - ununsed_op_names: they do not connect to the output
+           - effectively_constant_op_names: their outputs do not change with feeding different valued inputs
   '''
   effective_const_ops_ids = [] # List[int]
   effective_const_op_names = [] # List[str]
@@ -92,8 +93,8 @@ def _find_unused_ops(ops, sess, output_names, feed_dict1, feed_dict2):
       tensors_evaluated2 = sess.run(tensors, feed_dict=feed_dict2)
       networks_out_dont_match = True
       for idx in network_out_ids:
-        out1 = tensors_evaluated1[idx].flatten()
-        out2 = tensors_evaluated2[idx].flatten()
+        out1 = tensors_evaluated1[idx].flatten().astype(np.float32)
+        out2 = tensors_evaluated2[idx].flatten().astype(np.float32)
         if np.amax(np.abs(out1 - out2)) < 1e-4:
           networks_out_dont_match = False
           break
@@ -101,8 +102,8 @@ def _find_unused_ops(ops, sess, output_names, feed_dict1, feed_dict2):
         for op_name in list(op_name_to_out_ids.keys()):
           is_skippable = True
           for idx in op_name_to_out_ids[op_name][0]:
-            out1 = tensors_evaluated1[idx].flatten()
-            out2 = tensors_evaluated2[idx].flatten()
+            out1 = tensors_evaluated1[idx].flatten().astype(np.float32)
+            out2 = tensors_evaluated2[idx].flatten().astype(np.float32)
             if np.amax(np.abs(out1-out2)) > 1e-6:
               is_skippable = False
               break

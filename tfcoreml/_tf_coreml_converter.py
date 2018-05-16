@@ -96,7 +96,7 @@ def _check_unsupported_ops(ops, output_feature_names, skip_ops):
   Error out if there is at least one unsupported op.
   :param ops: ops of the TF graph
   :param output_feature_names: [str]: list of output names 
-  :param skip_ops: set(): set of op names that can be skipped since they either do not depend on the 
+  :param skip_ops: [str]: list of op names that can be skipped since they either do not depend on the 
   actual value of the input or do not connect to the final output
   '''
   unsupported_op_types = []
