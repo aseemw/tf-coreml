@@ -1,4 +1,5 @@
 from tensorflow.python.util import compat
+from coremltools.proto import NeuralNetwork_pb2
 
 def identity(op, context, input_name = None):
   is_network_output = False
@@ -70,3 +71,28 @@ def effectively_constant_op(op, context):
     x = context.session.run(out, feed_dict=context.input_feed_dict)
     add_const(context, out.name, x, out.name)
     context.translated[out.name] = True
+
+def custom_layer(op, context):
+
+  if op.type in context.custom_conversion_functions:
+    func = context.custom_conversion_functions[op.type]
+    params = func(op)
+  elif op.name in context.custom_conversion_functions:
+    func = context.custom_conversion_functions[op.name]
+    params = func(op)
+  else:
+    params = NeuralNetwork_pb2.CustomLayerParams()
+    params.className = op.type
+    params.description = "Custom layer that corresponds to the TensorFlow op {}".format(op.type, )
+
+  inputs = [inp.name for inp in op.inputs]
+  outputs = [out.name for out in op.outputs]
+
+  context.builder.add_custom(name=op.name,
+                            input_names=inputs,
+                            output_names=outputs,
+                            custom_proto_spec=params)
+  for out in outputs:
+    context.translated[out] = True
+  context.ops_converted_to_custom_layers.append(op)
+
