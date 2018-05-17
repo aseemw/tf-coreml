@@ -58,7 +58,7 @@ The following arguments are required by the CoreML converter:
 Note that the frozen .pb file can be obtained from the checkpoint and graph def files
 by using the `tensorflow.python.tools.freeze_graph` utility. 
 For details of freezing TF graphs, please refer to the TensorFlow documentation and the notebooks in directory `examples/` in this repo.
-There are scripts in the `utils/` directory for visualizing and writing out a text summary of a given frozen TF graph. This could be useful in determining the input/output names and shapes.  
+There are scripts in the `utils/` directory for visualizing and writing out a text summary of a given frozen TF graph. Another useful tool for visualizing frozen TF graphs is [Netron](https://github.com/lutzroeder/Netron). This could be useful in determining the input/output names and shapes.  
 
 **For example:**
 
@@ -91,6 +91,8 @@ Following topics are discussed in the jupyter notebooks under the `examples/` fo
 **ssd_example.ipynb**: How to extract a portion of the TF graph that can be converted, from the overall graph that may have unsupported ops.
 
 **style_transfer_example.ipynb**: How to edit a CoreML model to get an image output type (by default the outputs are MultiArrays).
+
+**custom_layer_examples.ipynb**: A few examples to demonstrate the process of adding custom CoreML layers for unsupported TF ops. 
 
 ## Supported Ops
 
@@ -151,6 +153,7 @@ List of TensorFlow ops that are supported currently (see `tfcoreml/_ops_to_layer
 * Transpose*
 
 Note that certain parameterizations of these ops may not be fully supported. For ops marked with an asterisk, only very specific usage patterns are supported. In addition, there are several other ops (not listed above) that are skipped by the converter as they generally have no effect during inference. Kindly refer to the files `tfcoreml/_ops_to_layers.py` and `tfcoreml/_layers.py` for full details. 
+For unsupported ops or configurations, the [custom layer](https://developer.apple.com/documentation/coreml/core_ml_api/creating_a_custom_layer) feature of CoreML can be used. For details, refer to the `examples/custom_layer_examples.ipynb` notebook. 
 
 
 Scripts for converting several of the following pretrained models can be found at `tests/test_pretrained_models.py`. 
