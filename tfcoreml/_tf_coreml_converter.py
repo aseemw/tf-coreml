@@ -402,12 +402,12 @@ def _convert_pb_to_mlmodel(tf_model_path,
     print('\n')
     print("Custom layers have been added to the CoreML model "
           "corresponding to the following ops in the TF graph: ")
-    for i, node in enumerate(context.ops_converted_to_custom_layers):
+    for i, op in enumerate(context.ops_converted_to_custom_layers):
       input_info = []
       for input_ in op.inputs:
         input_info.append((str(input_.name), context.shape_dict.get(input_.name, str("Shape not available"))))
       output_info = []
-      for output_ in node.outputs:
+      for output_ in op.outputs:
         output_info.append((str(output_.name), context.shape_dict.get(output_.name, str("Shape not available"))))
       print("{}/{}: op type: {}, op input names and shapes: {}, op output names and shapes: {}".
             format(i + 1, len(context.ops_converted_to_custom_layers), op.type, str(input_info), str(output_info)))

@@ -18,7 +18,7 @@ To get the latest version of the converter, clone this repo and install from sou
 
 ```shell
 git clone https://github.com/tf-coreml/tf-coreml.git
-cd tfcoreml 
+cd tf-coreml 
 ```
 
 To install as a package with `pip`, either run (at the root directory):

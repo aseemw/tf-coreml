@@ -74,6 +74,8 @@ def effectively_constant_op(op, context):
 
 def custom_layer(op, context):
 
+  print("Adding custom layer")
+
   if op.type in context.custom_conversion_functions:
     func = context.custom_conversion_functions[op.type]
     params = func(op)
