@@ -76,19 +76,26 @@ def custom_layer(op, context):
 
   print("Adding custom layer")
 
+  # Fill up values of any constant inputs that this op receives
+  constant_inputs = {}
+  for inp_ in op.inputs:
+    if inp_.name in context.consts:
+      constant_inputs[inp_.name] = context.consts[inp_.name]
+    elif inp_.op.type == 'Identity' and inp_.op.inputs[0].name in context.consts:
+      constant_inputs[inp_.op.inputs[0].name] = context.consts[inp_.op.inputs[0].name]
+
   if op.type in context.custom_conversion_functions:
     func = context.custom_conversion_functions[op.type]
-    params = func(op)
+    params, inputs, outputs = func(op, constant_inputs)
   elif op.name in context.custom_conversion_functions:
     func = context.custom_conversion_functions[op.name]
-    params = func(op)
+    params, inputs, outputs = func(op, constant_inputs)
   else:
     params = NeuralNetwork_pb2.CustomLayerParams()
     params.className = op.type
     params.description = "Custom layer that corresponds to the TensorFlow op {}".format(op.type, )
-
-  inputs = [inp.name for inp in op.inputs]
-  outputs = [out.name for out in op.outputs]
+    inputs = [inp.name for inp in op.inputs]
+    outputs = [out.name for out in op.outputs]
 
   context.builder.add_custom(name=op.name,
                             input_names=inputs,
