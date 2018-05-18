@@ -60,6 +60,8 @@ by using the `tensorflow.python.tools.freeze_graph` utility.
 For details of freezing TF graphs, please refer to the TensorFlow documentation and the notebooks in directory `examples/` in this repo.
 There are scripts in the `utils/` directory for visualizing and writing out a text summary of a given frozen TF graph. Another useful tool for visualizing frozen TF graphs is [Netron](https://github.com/lutzroeder/Netron). This could be useful in determining the input/output names and shapes.  
 
+There are additional arguments that the converter can take. For details, refer to the full function definition [here](https://github.com/tf-coreml/tf-coreml/blob/4873258a145664106154922ad8ee09a0a3729ee0/tfcoreml/_tf_coreml_converter.py#L395). 
+
 **For example:**
 
 When input shapes are fully determined in the frozen .pb file:
