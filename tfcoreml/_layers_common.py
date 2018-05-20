@@ -79,6 +79,11 @@ def custom_layer(op, context):
   if op.name in context.custom_conversion_functions or \
      op.type in context.custom_conversion_functions:
 
+    if op.type in context.custom_conversion_functions:
+      func = context.custom_conversion_functions[op.type]
+    else:
+      func = context.custom_conversion_functions[op.name]
+
     # Fill up values of any constant inputs that this op receives
     constant_inputs = {}
     for inp_ in op.inputs:
@@ -86,11 +91,6 @@ def custom_layer(op, context):
         constant_inputs[inp_.name] = context.consts[inp_.name]
       elif inp_.op.type == 'Identity' and inp_.op.inputs[0].name in context.consts:
         constant_inputs[inp_.op.inputs[0].name] = context.consts[inp_.op.inputs[0].name]
-
-      if op.type in context.custom_conversion_functions:
-        func = context.custom_conversion_functions[op.type]
-      else:
-        func = context.custom_conversion_functions[op.name]
 
     kwargs = {"op": op, "nn_builder": context.builder, "context": context, "constant_inputs": constant_inputs}
     func(**kwargs)
