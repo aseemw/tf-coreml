@@ -514,7 +514,7 @@ def convert(tf_model_path,
       Flag to turn on addition of custom CoreML layers for unsupported TF ops or attributes within
       a supported op.
   
-  custom_conversion_functions: dict(): {Text: func()}
+  custom_conversion_functions: dict(): {Text: func(**kwargs)}
       A dictionary with keys corresponding to the names or types of the TF ops and values as functions.
       The functions must take as argument a TF operation,  i.e. return type of the function "get_operations()" 
       (https://github.com/tensorflow/tensorflow/blob/51ef16057b4625e0a3e2943a9f1bbf856cf098ca/tensorflow/python/framework/ops.py#L3707).
