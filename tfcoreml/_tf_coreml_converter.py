@@ -515,12 +515,14 @@ def convert(tf_model_path,
       a supported op.
   
   custom_conversion_functions: dict(): {Text: func(**kwargs)}
-      A dictionary with keys corresponding to the names or types of the TF ops and values as functions.
-      The functions must take as argument a TF operation,  i.e. return type of the function "get_operations()" 
-      (https://github.com/tensorflow/tensorflow/blob/51ef16057b4625e0a3e2943a9f1bbf856cf098ca/tensorflow/python/framework/ops.py#L3707).
-      It also receives an additional argument that is a dictionary containing the op's inputs that are constants and their values (as numpy arrays).
-      The function must return CoreML custom layer parameters, i.e. an object of type coremltools.proto.NeuralNetwork_pb2.CustomLayerParams(), 
-      and a list of input and output names.
+      Argument to provide user-defined functions for converting Tensorflow operations (op, for short).
+      A dictionary with keys corresponding to the names or types of the TF ops and values as handle to user-defined functions.  
+      The keys can be either the type of the op or the name of the op. If former, then the function is called whenever the op
+      of that type is encountered during conversion. By using op names, specific ops can be targeted which is 
+      useful for handling unsupported configuration in an op.
+      The function receives multiple arguments: TF operation, the CoreML Neural network builder object, 
+      dictionary containing the op's inputs that are constants and their values (as numpy arrays).
+      The function can add custom layers or any other combination of CoreML layers to translate the TF op. 
       See "examples/custom_layer_examples.ipynb" jupyter-notebook for examples on using this argument. 
 
   Returns
