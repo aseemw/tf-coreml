@@ -33,9 +33,9 @@ setup(
     install_requires=[
         'numpy >= 1.6.2',
         'protobuf >= 3.1.0',
-        'six>=1.10.0',
-        'tensorflow >= 1.1.0',
-        'coremltools >= 0.6.3'
+        'six >= 1.10.0',
+        'tensorflow >= 1.5.0',
+        'coremltools >= 0.8'
     ],
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
