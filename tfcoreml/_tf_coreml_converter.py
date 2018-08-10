@@ -12,6 +12,9 @@ from ._interpret_shapes import _interpret_shape as interpret_shape
 from ._tf_graph_transform import _topological_sort_ops, _find_unused_ops
 from .optimizations._optimize_nn_spec import optimize_nn_spec
 
+from .graph_ir.graph import Graph
+from .graph_ir import graph_viz
+
 # Context stores useful information about TF graph and the conversion process
 class Context(object):
   def __init__(self, consts, shape_dict, ops, blob_graph, output_features):
@@ -164,6 +167,16 @@ def _convert_pb_to_mlmodel(tf_model_path,
 
   # Sort the ops in topological order and check whether the graph has cycles, if yes, error out
   OPS = _topological_sort_ops(OPS)
+
+
+  # prepare Graph IR from the list of TF ops
+  graph_ = Graph()
+  graph_.make_graph_from_TF_ops(OPS)
+  graph_viz.plot_graph(graph_, graph_img_path='/tmp/graph.png')
+
+  print(tf_model_path)
+  import ipdb
+  ipdb.set_trace()
 
   SHAPE_DICT = {} #Tensor name --> shape ({str: list})
   CONSTS = {} #Const Tensor name --> value
