@@ -12,7 +12,7 @@ from ._interpret_shapes import _interpret_shape as interpret_shape
 from ._tf_graph_transform import _topological_sort_ops, _find_unused_ops
 from .optimizations._optimize_nn_spec import optimize_nn_spec
 
-from .graph_ir.graph import Graph
+from .graph_ir.graph import *
 from .graph_ir import graph_viz
 
 # Context stores useful information about TF graph and the conversion process
@@ -170,9 +170,13 @@ def _convert_pb_to_mlmodel(tf_model_path,
 
 
   # prepare Graph IR from the list of TF ops
-  graph_ = Graph()
-  graph_.make_graph_from_TF_ops(OPS)
-  graph_viz.plot_graph(graph_, graph_img_path='/tmp/graph.png')
+  graph_collections = GraphCollections()
+  graph_collections.graph_main.make_graph_from_TF_ops(OPS)
+  graph_collections.build_compressed_graph()
+
+  graph_viz.plot_graph(graph_collections.graph_main, graph_img_path='/tmp/graph.png')
+  graph_viz.plot_graph(graph_collections.graph_compressed, graph_img_path='/tmp/graph_compressed.png')
+
 
   print(tf_model_path)
   import ipdb
