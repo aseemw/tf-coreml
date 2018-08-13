@@ -14,6 +14,7 @@ from .optimizations._optimize_nn_spec import optimize_nn_spec
 
 from .graph_ir.graph import *
 from .graph_ir import graph_viz
+from .graph_ir.graph_shape_analysis import Shape_analysis
 
 # Context stores useful information about TF graph and the conversion process
 class Context(object):
@@ -174,11 +175,17 @@ def _convert_pb_to_mlmodel(tf_model_path,
 
   # prepare Graph IR from the list of TF ops
   graph_collections = GraphCollections()
+  GraphCollections.tf_ops = OPS
   graph_collections.raw_graph.make_graph_from_TF_ops(OPS)
   graph_collections.build_compressed_graph()
 
   graph_viz.plot_graph(graph_collections.raw_graph, graph_img_path='/tmp/graph.pdf')
   graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/shape_compressed_graph.pdf')
+
+  Shape_analysis(graph_collections).run_shape_analysis()
+
+  graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/shape_compressed_graph_after_analysis.pdf')
+
 
   ipdb.set_trace()
 

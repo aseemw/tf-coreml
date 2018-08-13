@@ -41,7 +41,6 @@ class Node(object):
         self.inputs = []  # List[Tensor]
         self.attributes = {}  # Dict()
 
-
 class Graph(object):
     '''
     Class that defines the Graph Intermediate representation (IR). 
@@ -54,6 +53,12 @@ class Graph(object):
         self.tensor_map = {} # Dict[str, Tensor]. Maps tensor name to tensor object, need it to build the graph, useful to have.
         self.node_map = {} # Dict[str, Node]. Maps node name to Node object, useful to have.
 
+
+    def max_rank(self):
+        r = 0
+        for _,t in self.tensor_map.iteritems():
+            r = max(r, t.shape.rank)
+        return r
 
     def update_tensor_source_target_info(self):
 
@@ -124,6 +129,7 @@ class GraphCollections(object):
     '''
     def __init__(self):
         self.raw_graph = Graph() # Graph
+        self.tf_ops = [] # List[TF operations]
         self.shape_compressed_graph = Graph() # Graph
 
         '''
