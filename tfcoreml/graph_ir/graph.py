@@ -13,6 +13,7 @@ class TensorShape(object):
         self.is_fully_defined = False  # Bool
         self.shape = []  # List[Int]
         self.rank = 0  # Int
+        self.labeled_shape = [] # List[str]
 
 class Tensor(object):
     '''
@@ -56,7 +57,7 @@ class Graph(object):
 
     def max_rank(self):
         r = 0
-        for _,t in self.tensor_map.iteritems():
+        for _,t in self.tensor_map.items():
             r = max(r, t.shape.rank)
         return r
 
@@ -70,7 +71,7 @@ class Graph(object):
                                                                                                 node.inputs]),
                                                                                            str([out_.name for out_ in
                                                                                                 node.outputs])))
-        for tensor_name, tensor in self.tensor_map.iteritems():
+        for tensor_name, tensor in self.tensor_map.items():
             tensor.source_node = None
             tensor.target_nodes = []
         for node in self.nodes:

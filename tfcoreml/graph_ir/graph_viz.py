@@ -4,7 +4,8 @@ DEBUG = False
 
 
 def plot_graph(graph,
-               graph_img_path='graph.png'):
+               graph_img_path='graph.png',
+               use_labeled_shape=False):
     """
     Plot graph using pydot, the library the Keras uses as well for visualization. 
     
@@ -43,17 +44,23 @@ def plot_graph(graph,
             print('Node type: {}, name: {},  input name: {}, output names = {}'.format(node.type,node.name,
                                                                str([in_.name for in_ in node.inputs]),
                                                                str([out_.name for out_ in node.outputs])))
-        for t_name, t in graph.tensor_map.iteritems():
+        for t_name, t in graph.tensor_map.items():
             print('tensor name: {}, source = {}, target = {}'.format(t_name,
                                                                  t.source_node,
                                                                  str([tn for tn in t.target_nodes])))
 
     # Traverse graph and add nodes to pydot
     for node in graph.nodes:
-        inputlabels = ', '.join(
-            [str(tuple(input_.shape.shape)) for input_ in node.inputs])
-        outputlabels = ', '.join(
-            [str(tuple(output_.shape.shape)) for output_ in node.outputs])
+        if use_labeled_shape:
+            inputlabels = ', '.join(
+                [str(tuple(input_.shape.labeled_shape)) for input_ in node.inputs])
+            outputlabels = ', '.join(
+                [str(tuple(output_.shape.labeled_shape)) for output_ in node.outputs])
+        else:
+            inputlabels = ', '.join(
+                [str(tuple(input_.shape.shape)) for input_ in node.inputs])
+            outputlabels = ', '.join(
+                [str(tuple(output_.shape.shape)) for output_ in node.outputs])
         input_names = ', '.join([input_.name for input_ in node.inputs])
         output_names = ', '.join([output_.name for output_ in node.outputs])
         label = label = '%s\n|{|%s}|{{%s}|{%s}}' % (node.name.split('___')[0] + '_' + node.type,

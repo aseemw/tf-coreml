@@ -180,12 +180,12 @@ def _convert_pb_to_mlmodel(tf_model_path,
   graph_collections.build_compressed_graph()
 
   graph_viz.plot_graph(graph_collections.raw_graph, graph_img_path='/tmp/graph.pdf')
-  graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/shape_compressed_graph.pdf')
+  graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/graph_opt.pdf')
 
   Shape_analysis(graph_collections).run_shape_analysis()
 
-  graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/shape_compressed_graph_after_analysis.pdf')
-
+  graph_viz.plot_graph(graph_collections.raw_graph, graph_img_path='/tmp/graph_ls.pdf',use_labeled_shape=True)
+  graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/graph_opt_ls.pdf',use_labeled_shape=True)
 
   ipdb.set_trace()
 
