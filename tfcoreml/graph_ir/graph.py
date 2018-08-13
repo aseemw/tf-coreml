@@ -135,7 +135,9 @@ class GraphCollections(object):
            these are the ones that may correspond to weight/other params in an op and their shape 
            might not be important. 
         '''
-        self.edge_equivalence_map = dict() # Dict[str, str].
+        self.edge_equivalence_map = dict() # Dict[str, str]
+
+        self.associated_node_types = dict() # [str, str]
 
 
     def build_compressed_graph(self):
@@ -146,6 +148,11 @@ class GraphCollections(object):
         for node in raw_graph.nodes:
             if node.type in RANK_PRESERVING_OPS:
                 self.edge_equivalence_map[node.outputs[0].name] = self.edge_equivalence_map.get(node.inputs[0].name, node.inputs[0].name)
+                tensor_name = self.edge_equivalence_map[node.outputs[0].name]
+                if tensor_name in self.associated_node_types:
+                    self.associated_node_types[tensor_name].append(node.type)
+                else:
+                    self.associated_node_types[tensor_name] = [node.type]
             else:
                 new_node = Node(node.name, node.type)
                 for out_edge in node.outputs:
