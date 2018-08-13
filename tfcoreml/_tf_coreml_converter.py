@@ -169,17 +169,17 @@ def _convert_pb_to_mlmodel(tf_model_path,
   OPS = _topological_sort_ops(OPS)
 
 
+  print("-----",tf_model_path,"------")
+  import ipdb
+
   # prepare Graph IR from the list of TF ops
   graph_collections = GraphCollections()
-  graph_collections.graph_main.make_graph_from_TF_ops(OPS)
+  graph_collections.raw_graph.make_graph_from_TF_ops(OPS)
   graph_collections.build_compressed_graph()
 
-  graph_viz.plot_graph(graph_collections.graph_main, graph_img_path='/tmp/graph.png')
-  graph_viz.plot_graph(graph_collections.graph_compressed, graph_img_path='/tmp/graph_compressed.png')
+  graph_viz.plot_graph(graph_collections.raw_graph, graph_img_path='/tmp/graph.pdf')
+  graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/shape_compressed_graph.pdf')
 
-
-  print(tf_model_path)
-  import ipdb
   ipdb.set_trace()
 
   SHAPE_DICT = {} #Tensor name --> shape ({str: list})
