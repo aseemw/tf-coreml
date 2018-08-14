@@ -12,20 +12,70 @@ def add_op(gc, node, forward=True):
         else:
             raise ValueError('Add: output rank must match one of the inputs rank')
     else:
-        out_r = node.outputs[0].shape.rank
         for i in range(2):
             in_r = node.inputs[i].shape.rank
-            if out_r == in_r:
-                node.inputs[i].shape.shape = copy.copy(node.outputs[0].shape.shape)
-            else:
-                assert in_r < out_r
-                node.inputs[i].shape.shape[:] = node.outputs[0].shape.shape[-in_r:]
+            node.inputs[i].shape.shape[:] = node.outputs[0].shape.shape[-in_r:]
+
+def matmul_op(gc, node, forward=True):
+    # https://www.tensorflow.org/api_docs/python/tf/matmul
+    # 2 inputs, 1 output
+    assert node.inputs[0].shape.rank == node.inputs[1].shape.rank
+    assert node.inputs[0].shape.rank == node.outputs[0].shape.rank
+    if forward:
+        node.outputs[0].shape.shape = copy.copy(node.inputs[0].shape.shape)
+    else:
+        node.inputs[0].shape.shape = copy.copy(node.outputs[0].shape.shape)
+        node.inputs[1].shape.shape = copy.copy(node.outputs[0].shape.shape)
 
 
 OPS_TYPES_REGISTRY = {
     'Add': add_op,
+    'MatMul': matmul_op,
 }
 
+
+def voting_algo(gc, voting_dict):
+
+    '''
+    Based on the type of node, vot for what label the dimensions should get.
+    Voting can be strong/hard or weak/soft. 
+    
+    :param gc: 
+    :param voting_dict: 
+    :return: 
+    '''
+
+    def _get_shape(gc, edge_name):
+        if edge_name in gc.edge_equivalence_map:
+            edge = gc.edge_equivalence_map[edge_name]
+        else:
+            edge = edge_name
+        if edge in gc.shape_compressed_graph.tensor_map:
+            return gc.shape_compressed_graph.tensor_map[edge].shape.shape
+        else:
+            return None
+
+    def _get_voting_dict_bins(shape):
+        x, y = [int(j) for j in shape.split('_')]
+        return x, y
+
+
+    # here we will iterate over the raw graph nodes
+    for node in gc.raw_graph.nodes:
+        if node.type in ['MaxPool', 'Conv2D']:
+            s = _get_shape(gc, node.outputs[0].name)
+            if s:
+                for i, l in enumerate(['B', 'H', 'W', 'C']):
+                    x, y = _get_voting_dict_bins(s[i])
+                    voting_dict[x][y][0].append(l)
+        if node.type in ['MatMul']:
+            s = _get_shape(gc, node.outputs[0].name)
+            if s:
+                x, y = _get_voting_dict_bins(s[0])
+                voting_dict[x][y][1].append('B')
+                if len(s) == 2:
+                    x, y = _get_voting_dict_bins(s[1])
+                    voting_dict[x][y][1].append('C')
 
 
 class Shape_analysis(object):
@@ -55,7 +105,7 @@ class Shape_analysis(object):
         return shape_dict
 
 
-    def run_shape_analysis(self):
+    def run_shape_analysis(self, run_voting_algorithm=True):
         n = 0
         graph = self.gc.shape_compressed_graph
         voting_dict = collections.OrderedDict()
@@ -91,44 +141,40 @@ class Shape_analysis(object):
         # print info about how many tensors were left out
         shape_dict = self.make_shape_dict(print_info=True)
 
-        # do the voting step
-        # here we will iterate over the raw graph nodes
-        for node in self.gc.raw_graph.nodes:
-            if node.type in ['MaxPool', 'Conv2D']:
-                out_ = node.outputs[0].name
-                if out_ in self.gc.edge_equivalence_map:
-                    edge = self.gc.edge_equivalence_map[out_]
+        if run_voting_algorithm:
+
+            # do the voting step
+            voting_algo(self.gc, voting_dict)
+
+            # complete voting dictionary
+            for kv,v in voting_dict.items():
+                for kz, z in v.items():
+                    hard_votes = z[0] # List[str]
+                    soft_votes = z[1] # List[str]
+                    if len(hard_votes) > 0:
+                        assert len(set(hard_votes)) == 1, "inconsistent voting"
+                        voting_dict[kv][kz][0] = [hard_votes[0]]
+                    else:
+                        assert len(soft_votes) > 0, "no hard votes and no soft votes"
+                        # find mode from the soft voting
+                        voting_dict[kv][kz][0] = max(set(soft_votes), key=soft_votes.count)
+
+
+            # populate tensor labeled shapes
+            # first for the compressed graph
+            for tname, t in self.gc.shape_compressed_graph.tensor_map.items():
+                for s in t.shape.shape:
+                    x, y = [int(j) for j in s.split('_')]
+                    t.shape.labeled_shape.append(voting_dict[x][y][0][0])
+            # now for the raw graph
+            for tname, t in self.gc.raw_graph.tensor_map.items():
+                if tname in self.gc.edge_equivalence_map:
+                    edge = self.gc.edge_equivalence_map[tname]
                 else:
-                    edge = out_
+                    edge = tname
                 if edge in self.gc.shape_compressed_graph.tensor_map:
-                    s = self.gc.shape_compressed_graph.tensor_map[edge].shape.shape
-                    for i,l in enumerate(['B','H','W','C']):
-                        x, y = [int(j) for j in s[i].split('_')]
-                        voting_dict[x][y][0].append(l)
-
-        # complete voting dictionary
-        for kv,v in voting_dict.items():
-            for kz, z in v.items():
-                svotes = z[0]
-                assert len(svotes) > 0, "no votes"
-                assert len(set(svotes)) == 1, "inconsistent voting"
-                voting_dict[kv][kz][0] = [z[0][0]]
-
-        # populate tensor labeled shapes
-
-        # first for the compressed graph
-        for tname, t in self.gc.shape_compressed_graph.tensor_map.items():
-            for s in t.shape.shape:
-                x, y = [int(j) for j in s.split('_')]
-                t.shape.labeled_shape.append(voting_dict[x][y][0][0])
-        for tname, t in self.gc.raw_graph.tensor_map.items():
-            if tname in self.gc.edge_equivalence_map:
-                edge = self.gc.edge_equivalence_map[tname]
-            else:
-                edge = tname
-            if edge in self.gc.shape_compressed_graph.tensor_map:
-                ls = self.gc.shape_compressed_graph.tensor_map[edge].shape.labeled_shape
-                t.shape.labeled_shape = copy.copy(ls)
+                    ls = self.gc.shape_compressed_graph.tensor_map[edge].shape.labeled_shape
+                    t.shape.labeled_shape = copy.copy(ls)
 
 
 

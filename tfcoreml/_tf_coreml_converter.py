@@ -182,12 +182,12 @@ def _convert_pb_to_mlmodel(tf_model_path,
   graph_viz.plot_graph(graph_collections.raw_graph, graph_img_path='/tmp/graph.pdf')
   graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/graph_opt.pdf')
 
+  #ipdb.set_trace()
+
   Shape_analysis(graph_collections).run_shape_analysis()
 
   graph_viz.plot_graph(graph_collections.raw_graph, graph_img_path='/tmp/graph_ls.pdf',use_labeled_shape=True)
   graph_viz.plot_graph(graph_collections.shape_compressed_graph, graph_img_path='/tmp/graph_opt_ls.pdf',use_labeled_shape=True)
-
-  ipdb.set_trace()
 
   SHAPE_DICT = {} #Tensor name --> shape ({str: list})
   CONSTS = {} #Const Tensor name --> value

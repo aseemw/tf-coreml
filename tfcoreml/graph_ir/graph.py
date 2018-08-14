@@ -144,8 +144,6 @@ class GraphCollections(object):
         '''
         self.edge_equivalence_map = dict() # Dict[str, str]
 
-        self.associated_node_types = dict() # [str, str]
-
 
     def build_compressed_graph(self):
         self.shape_compressed_graph = Graph() # clear the graph, we are going to build it fresh
@@ -155,22 +153,20 @@ class GraphCollections(object):
         for node in raw_graph.nodes:
             if node.type in RANK_PRESERVING_OPS:
                 self.edge_equivalence_map[node.outputs[0].name] = self.edge_equivalence_map.get(node.inputs[0].name, node.inputs[0].name)
-                tensor_name = self.edge_equivalence_map[node.outputs[0].name]
-                if tensor_name in self.associated_node_types:
-                    self.associated_node_types[tensor_name].append(node.type)
-                else:
-                    self.associated_node_types[tensor_name] = [node.type]
             else:
                 new_node = Node(node.name, node.type)
                 for out_edge in node.outputs:
                     tensor = Tensor(out_edge.name, out_edge.shape)
-                    tensor.shape.shape = [-1 for i in range(tensor.shape.rank)]
+                    tensor.shape.shape = [-1 for i in range(out_edge.shape.rank)]
+                    tensor.shape.rank = out_edge.shape.rank
                     self.shape_compressed_graph.tensor_map[tensor.name] = tensor
                     new_node.outputs.append(tensor)
                 for inbound_edge in node.inputs:
                     if inbound_edge.name in self.edge_equivalence_map:
                         name = self.edge_equivalence_map[inbound_edge.name]
-                    assert name in self.shape_compressed_graph.tensor_map, ('source node not found for tensor called {}'.format(tensor.name))
+                    else:
+                        name = inbound_edge.name
+                    assert name in self.shape_compressed_graph.tensor_map, ('source node not found for tensor called {}'.format(name))
                     new_node.inputs.append(self.shape_compressed_graph.tensor_map[name])
                 self.shape_compressed_graph.nodes.append(new_node)
 
