@@ -71,7 +71,8 @@ def _generate_data(input_shape, mode = 'random'):
     X = np.random.rand(*input_shape)-0.5
   return X
 
-class TFNetworkTest(unittest.TestCase):
+#class TFNetworkTest(unittest.TestCase):
+class TFNetworkTest(object):
 
   @classmethod
   def setUpClass(self):
@@ -1051,3 +1052,11 @@ class TFCustomLayerTest(TFNetworkTest):
         self.assertIsNotNone(layers[1].custom)
         self.assertEqual('Slice', layers[1].custom.className)
         self.assertEqual(2, len(layers[1].custom.weights))
+
+
+
+if __name__ == "__main__":
+    print('here')
+    test_obj = TFSimpleNetworkTest()
+    test_obj.test_simple_convnet()
+    #test_obj.test_linear()
