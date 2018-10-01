@@ -16,6 +16,7 @@ _CORE_OPS = {
   'Const': _layers.constant,
   'Conv2D': _layers.conv2d,
   'Conv2DBackpropInput': _layers.deconv2d,
+  'CropAndResize': _layers.crop_and_resize,
   'DepthwiseConv2dNative': _layers.conv2d,
   'Elu': _layers.elu,
   'Exp': _layers.exp,
