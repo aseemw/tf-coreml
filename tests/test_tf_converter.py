@@ -403,7 +403,7 @@ class TFSimpleNetworkTest(TFNetworkTest):
     output_name = [h_fc1.op.name]
     # quantized
     self._test_tf_model(graph,
-        {"test_convnet/input:0":[1,8,8,3]}, output_name, delta=0.10,is_quantized=True)
+        {"test_convnet/input:0":[1,8,8,3]}, output_name, delta=0.20,is_quantized=True)
 
 
   def test_reduce_max(self):
@@ -1165,3 +1165,7 @@ class TFCustomLayerTest(TFNetworkTest):
 
 if __name__ == '__main__':
     unittest.main()
+    ## To run a specific test:
+    # suite = unittest.TestSuite()
+    # suite.addTest(TFSimpleNetworkTest("test_convnet"))
+    # unittest.TextTestRunner().run(suite)
