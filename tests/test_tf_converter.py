@@ -11,6 +11,8 @@ from tensorflow.python.tools.freeze_graph import freeze_graph
 from tensorflow.tools.graph_transforms import TransformGraph
 import tfcoreml as tf_converter
 
+np.random.seed(34)
+
 
 """IMPORTANT NOTE TO ADD NEW TESTS:
 For each test function you should set up your own graph and session.
@@ -801,6 +803,14 @@ class TFSingleLayersTest(TFNetworkTest):
     with graph.as_default() as g:
       x_input = tf.placeholder(tf.float32, shape=[None, 10, 10, 3], name="input")
       z = tf.image.resize_bilinear(x_input, size=[20, 30], align_corners=True)
+    output_name = [z.op.name]
+    self._test_tf_model_constant(graph, {"input:0":[1,10,10,3]}, output_name, delta=1e-2)
+
+  def test_resize_bilinear_non_fractional_upsample_mode(self):
+    graph = tf.Graph()
+    with graph.as_default() as g:
+      x_input = tf.placeholder(tf.float32, shape=[None, 10, 10, 3], name="input")
+      z = tf.image.resize_bilinear(x_input, size=[20, 30], align_corners=False)
     output_name = [z.op.name]
     self._test_tf_model_constant(graph, {"input:0":[1,10,10,3]}, output_name, delta=1e-2)
 

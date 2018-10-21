@@ -191,13 +191,17 @@ def _convert_pb_to_mlmodel(tf_model_path,
           ('Output feature cannot be a placeholder')
       input_name = compat.as_str_any(op.outputs[0].name)
       shape = op.outputs[0].get_shape()
-      if not (shape.is_fully_defined() or input_name in input_name_shape_dict):
-        assert False, (
-            "%s is a placeholder with incomplete shape %s" %(input_name, str(shape)))
+      shape_list = shape.as_list()
       if shape.is_fully_defined():
-        shape = shape.as_list()
-      else:
+        shape = shape_list
+      elif input_name in input_name_shape_dict:
         shape = input_name_shape_dict[input_name]
+        assert len(shape) == len(shape_list), "Incorrect input shape provided"
+      elif shape_list[0] is None and None not in shape_list[1:]:
+        shape = [1] + shape_list[1:]
+      else:
+        assert False, ("%s is a placeholder with incomplete shape %s. Please provide the 'input_name_shape_dict' "
+                       "argument to the convert function, with the fully defined shape." %(input_name, str(shape)))
 
       if len(shape) == 0: # scalar - use a 1
         input_feed_dict[op.outputs[0]] = 1
@@ -257,9 +261,11 @@ def _convert_pb_to_mlmodel(tf_model_path,
 
   # Find "effectively_constant_ops": ops whose output(s) do not change with different valued Graph level inputs
   # Find "unused_ops" : ops that are not connected to the output(s)
+  print("Now finding ops in the TF graph that can be dropped for inference")
   unused_ops, effectively_constant_ops = _find_unused_ops(OPS, sess, output_feature_names, input_feed_dict, input_feed_dict2) # return type: List[str], List[str]
   if not add_custom_layers:
     _check_unsupported_ops(OPS, output_feature_names, effectively_constant_ops + unused_ops)
+  print('Now starting translation to CoreML graph.')
 
 
   # Load all the dictionaries in the object of the class "context"
