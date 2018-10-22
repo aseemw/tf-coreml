@@ -194,16 +194,20 @@ def _convert_pb_to_mlmodel(tf_model_path,
           ('Output feature cannot be a placeholder')
       input_name = compat.as_str_any(op.outputs[0].name)
       shape = op.outputs[0].get_shape()
-      shape_list = shape.as_list()
-      if shape.is_fully_defined():
-        shape = shape_list
-      elif input_name in input_name_shape_dict:
+
+      if input_name in input_name_shape_dict:
         shape = input_name_shape_dict[input_name]
-        assert len(shape) == len(shape_list), "Incorrect input shape provided"
-      elif shape_list[0] is None and None not in shape_list[1:]:
-        shape = [1] + shape_list[1:]
+      elif shape.is_fully_defined():
+        shape = shape.as_list()
       else:
-        assert False, ("%s is a placeholder with incomplete shape %s. Please provide the 'input_name_shape_dict' "
+        try:
+          shape_list = shape.as_list()
+        except:
+          raise ValueError('Please provide the shape for the input {} through the argument \'input_name_shape_dict\''.format(input_name))
+        if shape_list[0] is None and None not in shape_list[1:]:
+          shape = [1] + shape_list[1:]
+        else:
+          raise ValueError("%s is a placeholder with incomplete shape %s. Please provide the 'input_name_shape_dict' "
                        "argument to the convert function, with the fully defined shape." %(input_name, str(shape)))
 
       if len(shape) == 0: # scalar - use a 1

@@ -540,3 +540,7 @@ class TestModels(CorrectnessTest):
 
 if __name__ == '__main__':
     unittest.main()
+    # ## To run a specific test:
+    # suite = unittest.TestSuite()
+    # suite.addTest(TestModels("test_googlenet_v1_nonslim"))
+    # unittest.TextTestRunner().run(suite)
