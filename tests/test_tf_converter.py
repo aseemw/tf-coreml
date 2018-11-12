@@ -458,6 +458,21 @@ class TFSimpleNetworkTest(TFNetworkTest):
       self._test_tf_model(graph,
         {"test_pad_conv/input:0":[1,Hin,Win,Cin]}, output_name, delta=.05)
 
+  def test_contrib_bn(self):
+    graph = tf.Graph()
+    with graph.as_default() as g:
+      x_image = tf.placeholder(tf.float32, shape=[None,8,8,3], name="test_convnet/input")
+      x1 = tf.contrib.layers.batch_norm(x_image,
+                                        decay=.9,
+                                        scale=True,
+                                        is_training=False,
+                                        zero_debias_moving_mean=False, fused=True)
+      W_conv1 = tf.Variable(tf.truncated_normal([3,3,3,2], stddev=0.3))
+      h_conv1 = tf.nn.conv2d(x1, W_conv1, strides=[1,1,1,1], padding='SAME')
+
+    output_name = [h_conv1.op.name]
+    self._test_tf_model(graph, {"test_convnet/input:0":[1,8,8,3]}, output_name, delta=1e-2)
+
 class TFSingleLayersTest(TFNetworkTest):
   """ Small models from tensorflow.layers
   """
@@ -1177,8 +1192,8 @@ class TFCustomLayerTest(TFNetworkTest):
 
 
 if __name__ == '__main__':
-    unittest.main()
-    ## To run a specific test:
-    # suite = unittest.TestSuite()
-    # suite.addTest(TFSimpleNetworkTest("test_convnet"))
-    # unittest.TextTestRunner().run(suite)
+    #unittest.main()
+    # To run a specific test:
+    suite = unittest.TestSuite()
+    suite.addTest(TFSimpleNetworkTest("test_contrib_bn"))
+    unittest.TextTestRunner().run(suite)
